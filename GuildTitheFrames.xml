@@ -1,0 +1,404 @@
+﻿<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="C:\Program Files (x86)\World of Warcraft\BlizzardInterfaceCode\Interface\FrameXML\UI.xsd" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+	<!--Templates-->
+	<Font name="ChatFontDisable" virtual="true" inherits="ChatFontNormal">
+		<Color r="0.5" g="0.5" b="0.5"/>
+	</Font>
+	
+	<Frame name="GuildTitheOptionsRow" virtual="true">
+		<Size y="25"/>
+		<Anchors>
+			<Anchor point="LEFT" relativePoint="LEFT" relativeTo="$parent">
+				<Offset x="20"/>
+			</Anchor>
+			<Anchor point="RIGHT" relativePoint="RIGHT" relativeTo="$parent">
+				<Offset x="-20" />
+			</Anchor>
+		</Anchors>
+		<Frames>
+			<!-- The checkbutton-->
+			<CheckButton name="$parent_Check" parentKey="Check" inherits="UICheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="TOPLEFT" relativeTo="$parent"/>
+				</Anchors>
+				<Scripts>
+					<OnLoad>self.text:SetFontObject(GameFontHighlight)</OnLoad>
+					<PostClick>GuildTithe[1].FrameScript_UpdateOptionRow(self, button)</PostClick>
+				</Scripts>
+				<HitRectInsets> <AbsInset left="0" right="-130" top="0" bottom="0" /> </HitRectInsets>
+			</CheckButton>
+			<!-- The EditBox
+				This is linked to the slider's value, so when it's changed it sets the slider, and vice-versa.-->
+			<EditBox name="$parent_Text" parentKey="Text" letters="6" autoFocus="false" inherits="InputBoxTemplate">
+				<Size x="40" y="25" />
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativePoint="TOPRIGHT" relativeTo="$parent" />
+				</Anchors>
+				<Scripts>
+					<OnEditFocusGained>
+						EditBox_HighlightText(self);
+						self:SetNumber(self:GetParent().Slider:GetValue())
+					</OnEditFocusGained>
+					<OnEditFocusLost>
+						EditBox_ClearHighlight(self);
+						if not strfind(self:GetText(), "%%") then
+							self:SetText(self:GetText() .. "%")
+						end
+					</OnEditFocusLost>
+					<OnEnterPressed>GuildTithe[1].FrameScript_EditBoxOnEnterPressed(self)</OnEnterPressed>
+					<OnEscapePressed>self:ClearFocus()</OnEscapePressed>
+					<OnDisable>self:SetFontObject(ChatFontDisable)</OnDisable>
+					<OnEnable>self:SetFontObject(ChatFontNormal)</OnEnable>
+				</Scripts>
+			</EditBox>
+			<!-- The Slider
+				Linked to the EditBox so we can set it's value from there-->
+			<Slider name="$parent_Slider" parentKey="Slider" inherits="OptionsSliderTemplate" minValue="1" maxValue="100" defaultValue="20" valueStep="1">
+				<Size x="195" y="17"/>
+				<Anchors>
+					<Anchor point="RIGHT" relativePoint="LEFT" relativeTo="$parent_Text">
+						<Offset x="-10" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						_G[self:GetName() .. "Low"]:SetText("1%")
+						_G[self:GetName() .. "High"]:SetText("100%")
+					</OnLoad>
+					<OnValueChanged>
+						self:GetParent().Text:ClearFocus()
+						self:GetParent().Text:SetText(tostring(value) .. "%")
+					</OnValueChanged>
+					<OnDisable>
+						GuildTithe[1].FrameScript_OptionRowChangeState(self, "DISABLE")
+					</OnDisable>
+					<OnEnable>
+						GuildTithe[1].FrameScript_OptionRowChangeState(self, "ENABLE")
+					</OnEnable>
+				</Scripts>
+			</Slider>
+		</Frames>
+	</Frame>
+
+	<!-- Import our scripts -->
+	<Script file="GuildTitheFrameScripts.lua"/>
+	
+	<!-- UI Elements-->
+	<Frame name="GT_OptionsFrame" parent="UIParent" movable="true" enableMouse="true" hidden="true" clampedToScreen="true" frameStrata="DIALOG">
+		<Size x="450" y="312"/>
+		<Anchors>
+			<Anchor point="TOPLEFT">
+				<Offset>
+					<RelDimension x="0.1" y="-0.1"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Backdrop edgeFile="Interface\DialogFrame\UI-DialogBox-Border" bgFile="Interface\DialogFrame\UI-DialogBox-Background" tile="true">
+			<BackgroundInsets>
+				<AbsInset left="10" top="10" right="10" bottom="10"/>
+			</BackgroundInsets>
+			<TileSize>
+				<AbsValue val="32"/>
+			</TileSize>
+			<EdgeSize>
+				<AbsValue val="32"/>
+			</EdgeSize>
+		</Backdrop>
+		<Frames>
+			<!--The draggable part of our frame, should move the whole frame-->
+			<Frame name="$parent_Title" parentKey="Title" enableMouse="true">
+				<Size x="160" y="45" />
+				<Anchors>
+					<Anchor point="CENTER" relativePoint = "TOP">
+						<Offset y="-5" />
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="ARTWORK">
+						<Texture file="Interface\DialogFrame\UI-DialogBox-Header" setAllPoints="true">
+							<Size x="100" y="32"/>
+							<TexCoords left="0.2265625" top="0.0" right="0.7734375" bottom="0.609375"/>
+						</Texture>
+					</Layer>
+					<Layer level="OVERLAY">
+						<FontString parentKey="Text" inherits="GameFontNormal" setAllPoints="true">
+							<Anchors>
+								<Anchor point="CENTER" relativePoint="CENTER">
+									<Offset y="-2" />
+								</Anchor>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnLoad>self:RegisterForDrag("LeftButton");</OnLoad>
+					<OnDragStart>self:GetParent():StartMoving();</OnDragStart>
+					<OnDragStop>self:GetParent():StopMovingOrSizing();</OnDragStop>
+				</Scripts>
+			</Frame>	
+			<!-- The close button-->
+			<Button name="$parent_CloseButton" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT">
+						<Offset x="-4" y="-4"/>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<!-- Misc Labels-->
+			<Frame name="$parent_InfoLabel" parentKey="Info">
+				<Size y="16" />
+				<Anchors>
+					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parent_Title"/>
+					<Anchor point="LEFT" relativePoint="LEFT">
+						<Offset x="45"/>
+					</Anchor>
+					<Anchor point="RIGHT" relativePoint="RIGHT">
+						<Offset x="-10"/>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString name="$parent_text" parentKey="text" nonspacewrap="false" inherits="GameFontNormal" justifyH="LEFT" setAllPoints="true">
+							<Size />
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+			<Frame name="$parent_VerLabel" parentKey="Version">
+				<Size y="16" />
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="RIGHT" relativeTo="$parent_Title">
+						<Offset x="-5" />
+					</Anchor>
+					<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT" relativeTo="$parent_CloseButton"/>
+				</Anchors>
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString name="$parent_text" parentKey="text" nonspacewrap="false" inherits="GameFontNormalSmall" justifyH="RIGHT" justifyV="MIDDLE" setAllPoints="true">
+							<Size />
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+
+			<!-- Options Row 1-->
+			<Frame name="$parent_QuestOptions" parentKey="QuestOptions" inherits="GuildTitheOptionsRow">
+				<Anchors>
+					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parent_InfoLabel"/>
+				</Anchors>
+			</Frame>
+			<!-- Options Row 2-->
+			<Frame name="$parent_LootOptions" parentKey="LootOptions" inherits="GuildTitheOptionsRow">
+				<Anchors>
+					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parent_QuestOptions">
+						<Offset y="-5"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<!-- Options Row 3-->
+			<Frame name="$parent_MerchantOptions" parentKey="MerchantOptions" inherits="GuildTitheOptionsRow">
+				<Anchors>
+					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parent_LootOptions">
+						<Offset y="-5" />
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<!-- Options Row 4-->
+			<Frame name="$parent_MailOptions" parentKey="MailOptions" inherits="GuildTitheOptionsRow">
+				<Anchors>
+					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parent_MerchantOptions">
+						<Offset y="-5" />
+					</Anchor>
+				</Anchors>
+			</Frame>
+            <!-- Options Row 5-->
+            <Frame name="$parent_TradeOptions" parentKey="TradeOptions" inherits="GuildTitheOptionsRow">
+				<Anchors>
+					<Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parent_MailOptions">
+						<Offset y="-5" />
+					</Anchor>
+				</Anchors>
+			</Frame>
+			<!-- Total Line-->
+			<Frame parentKey="TotalTithe">
+				<Size y="16" />
+				<Anchors>
+					<Anchor point="BOTTOM" relativePoint="BOTTOM">
+						<Offset y="10"/>
+					</Anchor>
+					<Anchor point="LEFT" relativePoint="LEFT">
+						<Offset x="10"/>
+					</Anchor>
+					<Anchor point="RIGHT" relativePoint="RIGHT">
+						<Offset x="-10"/>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="OVERLAY">
+						<FontString name="$parent_TotalLine" parentKey="text" nonspacewrap="false" inherits="GameFontHighlightLarge" setAllPoints="true">
+							<Size />
+						</FontString>
+					</Layer>
+				</Layers>
+			</Frame>
+			<!-- Extra Options-->
+			<Frame name="$parent_Seperator" parentKey="Extra">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="$parent_TradeOptions">
+						<Offset y="-15" />
+					</Anchor>
+					<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" relativeTo="$parent_TotalLine">
+						<Offset x="-5" y="5" />
+					</Anchor>
+				</Anchors>
+				<Backdrop edgeFile="Interface\Tooltips\UI-Tooltip-Border" bgFile="Interface\DialogFrame\UI-DialogBox-Background-Dark" tile="true">
+					<BackgroundInsets>
+						<AbsInset left="4" right="4" top="4" bottom="4" />
+					</BackgroundInsets>
+					<TileSize> <AbsValue val="32"/> </TileSize>
+					<EdgeSize> <AbsValue val="14"/> </EdgeSize>
+				</Backdrop>
+				<Frames>
+					<CheckButton name="$parent_ExtraOption1" parentKey="Spammy" inherits="UICheckButtonTemplate">
+						<Anchors>
+							<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT">
+								<Offset x="15" y="5" />
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<PostClick>	
+								if not self:GetChecked() then
+									PlaySound(857)
+								else
+									PlaySound(856)
+								end
+							</PostClick>
+						</Scripts>
+						<HitRectInsets> <AbsInset left="0" right="-90" top="0" bottom="0" /> </HitRectInsets>
+					</CheckButton>
+					<CheckButton name="$parent_ExtraOption2" parentKey="AutoDeposit" inherits="UICheckButtonTemplate">
+						<Anchors>
+							<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" relativeTo="$parent_ExtraOption1" />
+						</Anchors>
+						<Scripts>
+							<PostClick>	
+								if not self:GetChecked() then
+									PlaySound(857)
+								else
+									PlaySound(856)
+								end
+							</PostClick>
+						</Scripts>
+						<HitRectInsets> <AbsInset left="0" right="-230" top="0" bottom="0" /> </HitRectInsets>
+					</CheckButton>
+					<CheckButton name="$parent_ExtraOption3" parentKey="Debug" inherits="UICheckButtonTemplate">
+						<Size x="22" y="22" />
+						<Anchors>
+							<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" >
+								<Offset x="-80" y="5" />
+							</Anchor>
+						</Anchors>
+						<HitRectInsets> <AbsInset left="0" right="-80" top="0" bottom="0" /> </HitRectInsets>
+						<Scripts>
+							<OnLoad>self.text:SetFontObject(GameFontHighlightSmall)</OnLoad>
+							<PostClick>	
+								if not self:GetChecked() then
+									PlaySound(857)
+								else
+									PlaySound(856)
+								end
+							</PostClick>
+						</Scripts>
+					</CheckButton>
+					<CheckButton name="$parent_ExtraOption4" parentKey="SkinElv" inherits="UICheckButtonTemplate">
+						<Anchors>
+							<Anchor point="TOP" relativeTo="$parent_ExtraOption2" />
+							<Anchor point="RIGHT" relativePoint="RIGHT">
+								<Offset x="-99"/>
+							</Anchor>
+						</Anchors>
+						<Scripts>
+							<PostClick>	
+								if not self:GetChecked() then
+									PlaySound(857)
+								else
+									PlaySound(856)
+								end
+								StaticPopup_Show("GUILDTITHE_SKINRELOADWARNING")
+							</PostClick>
+						</Scripts>
+						<HitRectInsets> <AbsInset left="0" right="-81" top="0" bottom="0" /> </HitRectInsets>
+					</CheckButton>
+				</Frames>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnLoad>GuildTithe[1].LoadOptionsFrame(self)</OnLoad>
+			<OnShow>GuildTithe[1].UpdateOptions(self)</OnShow>
+			<OnHide>GuildTithe[1].SaveOptions(self)</OnHide>
+		</Scripts>
+	</Frame>
+	
+	<!-- The mini-tithe frame-->
+	<Button name="GT_MiniTitheFrame" parent="UIParent" enableMouse="true" movable="true" clampedToScreen="true" hidden="true">
+		<Size x="160" y="35" />
+		<Anchors>
+			<Anchor point="CENTER"/>
+		</Anchors>
+		<Backdrop edgeFile="Interface\Tooltips\UI-Tooltip-Border" bgFile="Interface\DialogFrame\UI-DialogBox-Background" tile="true">
+			<BackgroundInsets>
+				<AbsInset left="4" right="4" top="4" bottom="4" />
+			</BackgroundInsets>
+			<TileSize> <AbsValue val="32"/> </TileSize>
+			<EdgeSize> <AbsValue val="16"/> </EdgeSize>
+		</Backdrop>
+		<Frames>
+			<Button name="$parent_Close" inherits="UIPanelCloseButton">
+				<Size x="20" y="20" />
+				<Anchors>
+					<Anchor point="TOPRIGHT"/>
+				</Anchors>
+				<Scripts>
+					<PostClick>GuildTithe_SavedDB.MiniFrameShown = false</PostClick>
+				</Scripts>
+			</Button>
+		</Frames>
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString parentKey="Label1" inherits="GameFontNormalSmallLeft">
+					<Size x="85" y="10" />
+					<Anchors>
+						<Anchor point="TOPLEFT" relativePoint="TOPLEFT">
+							<Offset x="4" y="-4"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parent_TitheString" parentKey="CurrentTithe" inherits="GameFontHighlight">
+					<Size y="16" />
+					<Anchors>
+						<Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT">
+							<Offset x="8" y="3"/>
+						</Anchor>
+						<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT">
+							<Offset x="-8" y="3"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnLoad>GuildTithe[1].FrameScript_MiniTitheFrameOnLoad(self)</OnLoad>
+			<OnDragStart>self:StartMoving()</OnDragStart>
+			<OnDragStop>self:StopMovingOrSizing()</OnDragStop>
+			<OnClick>GuildTithe[1].FrameScript_MiniTitheFrameOnClick(self, button)</OnClick>
+		</Scripts>
+	</Button>
+	
+	<Frame name="GuildTitheEventFrame">
+		<Size />
+		<Scripts>
+			<OnLoad>GuildTithe_OnLoad(self)</OnLoad>
+		</Scripts>
+	</Frame>	
+
+</Ui>

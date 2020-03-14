@@ -1,0 +1,25 @@
+## Author: Vandesdelca32
+## Interface: 60000
+## Notes: Implements a guild bank tithe, allowing you to auto-deposit a percentage of your income (from various sources) into the guild bank. Originally written by botono9, this version contains much-needed code updates.
+## SavedVariablesPerCharacter: GuildTithe_SavedDB
+## Title: GuildTithe
+## Version: release_v2.5.15
+## OptionalDeps: ElvUI
+## Author: Vandesdelca32
+## X-OriginalAuthor: botono9
+## X-Curse-Packaged-Version: release_v2.5.15
+## X-Curse-Project-Name: Guild Tithe
+## X-Curse-Project-ID: guild-tithe
+## X-Curse-Repository-ID: wow/guild-tithe/mainline
+
+#Libraries
+embeds.xml
+
+#Actual Code
+Locale\loadLocales.xml
+GlobalStrings.lua
+
+Core.lua
+GuildTitheFrames.xml
+
+

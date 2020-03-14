@@ -1,0 +1,25 @@
+------------------------------------------------------------------------
+r121 | vandesdelca32 | 2014-10-17 03:33:11 +0000 (Fri, 17 Oct 2014) | 1 line
+Changed paths:
+   A /tags/release_v2.5.15 (from /trunk:120)
+
+Tagging latest build.
+------------------------------------------------------------------------
+r120 | vandesdelca32 | 2014-10-17 03:32:15 +0000 (Fri, 17 Oct 2014) | 1 line
+Changed paths:
+   M /trunk/Core.lua
+
+Fixed an error in the default settings pointed out by Kanegasi
+------------------------------------------------------------------------
+r118 | vandesdelca32 | 2014-10-17 00:50:40 +0000 (Fri, 17 Oct 2014) | 1 line
+Changed paths:
+   M /trunk/GuildTitheFrameScripts.lua
+
+Fixed a bug that caused disabling an option to not be saved correctly.
+------------------------------------------------------------------------
+r116 | vandesdelca32 | 2014-10-15 23:49:49 +0000 (Wed, 15 Oct 2014) | 1 line
+Changed paths:
+   M /trunk/GuildTithe.toc
+
+Bump ToC to 60000
+------------------------------------------------------------------------
