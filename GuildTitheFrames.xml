@@ -333,7 +333,21 @@
 			</Frame>
 		</Frames>
 		<Scripts>
-			<OnLoad>GuildTithe[1].LoadOptionsFrame(self)</OnLoad>
+			<OnLoad>
+---------------------------------- testing WoW version
+local wowversion, wowbuild, wowdate, wowtocversion = GetBuildInfo()
+if (wowtocversion > 90000) then Mixin(self, BackdropTemplateMixin) end
+---------------------------------- same code for 8.x and 9.x
+self:SetBackdrop({
+	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", 
+	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+	tile = true,
+	tileSize = 32,
+	edgeSize = 32,
+	insets = {left = 12, right = 12, top = 12, bottom = 12},
+})
+----------------------------------
+			GuildTithe[1].LoadOptionsFrame(self)</OnLoad>
 			<OnShow>GuildTithe[1].UpdateOptions(self)</OnShow>
 			<OnHide>GuildTithe[1].SaveOptions(self)</OnHide>
 		</Scripts>
@@ -387,7 +401,22 @@
 			</Layer>
 		</Layers>
 		<Scripts>
-			<OnLoad>GuildTithe[1].FrameScript_MiniTitheFrameOnLoad(self)</OnLoad>
+			<OnLoad>
+---------------------------------- testing WoW version
+local wowversion, wowbuild, wowdate, wowtocversion = GetBuildInfo()
+if (wowtocversion > 90000) then Mixin(self, BackdropTemplateMixin) end
+---------------------------------- same code for 8.x and 9.x
+self:SetBackdrop({
+	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", 
+	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+	tile = true,
+	tileSize = 12,
+	edgeSize = 20,
+	insets = {left = 4, right = 4, top = 4, bottom = 4},
+})
+----------------------------------
+			
+			GuildTithe[1].FrameScript_MiniTitheFrameOnLoad(self)</OnLoad>
 			<OnDragStart>self:StartMoving()</OnDragStart>
 			<OnDragStop>self:StopMovingOrSizing()</OnDragStop>
 			<OnClick>GuildTithe[1].FrameScript_MiniTitheFrameOnClick(self, button)</OnClick>

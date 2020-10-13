@@ -1,5 +1,5 @@
 ## Author: Vandesdelca32
-## Interface: 60000
+## Interface: 90000
 ## Notes: Implements a guild bank tithe, allowing you to auto-deposit a percentage of your income (from various sources) into the guild bank. Originally written by botono9, this version contains much-needed code updates.
 ## SavedVariablesPerCharacter: GuildTithe_SavedDB
 ## Title: GuildTithe
