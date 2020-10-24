@@ -120,7 +120,7 @@ function E:Init()
 	local t = {
 		type = "data source",
 		text = "",
-		icon = "Interface\\ICONS\\inv_misc_coin_17.png",
+		icon = "Interface\\ICONS\\inv_misc_coin_17.blp",
 		label = "Tithe",
 		OnClick = function(frame, button)
 			GameTooltip:Hide()
