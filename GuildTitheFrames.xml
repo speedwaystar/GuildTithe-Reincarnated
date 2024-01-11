@@ -1,5 +1,6 @@
-﻿<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="C:\Program Files (x86)\World of Warcraft\BlizzardInterfaceCode\Interface\FrameXML\UI.xsd" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
-..\FrameXML\UI.xsd">
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+	..\FrameXML\UI.xsd">
+
 	<!--Templates-->
 	<Font name="ChatFontDisable" virtual="true" inherits="ChatFontNormal">
 		<Color r="0.5" g="0.5" b="0.5"/>
@@ -93,17 +94,6 @@
 				</Offset>
 			</Anchor>
 		</Anchors>
-		<Backdrop edgeFile="Interface\DialogFrame\UI-DialogBox-Border" bgFile="Interface\DialogFrame\UI-DialogBox-Background" tile="true">
-			<BackgroundInsets>
-				<AbsInset left="10" top="10" right="10" bottom="10"/>
-			</BackgroundInsets>
-			<TileSize>
-				<AbsValue val="32"/>
-			</TileSize>
-			<EdgeSize>
-				<AbsValue val="32"/>
-			</EdgeSize>
-		</Backdrop>
 		<Frames>
 			<!--The draggable part of our frame, should move the whole frame-->
 			<Frame name="$parent_Title" parentKey="Title" enableMouse="true">
@@ -251,13 +241,6 @@
 						<Offset x="-5" y="5" />
 					</Anchor>
 				</Anchors>
-				<Backdrop edgeFile="Interface\Tooltips\UI-Tooltip-Border" bgFile="Interface\DialogFrame\UI-DialogBox-Background-Dark" tile="true">
-					<BackgroundInsets>
-						<AbsInset left="4" right="4" top="4" bottom="4" />
-					</BackgroundInsets>
-					<TileSize> <AbsValue val="32"/> </TileSize>
-					<EdgeSize> <AbsValue val="14"/> </EdgeSize>
-				</Backdrop>
 				<Frames>
 					<CheckButton name="$parent_ExtraOption1" parentKey="Spammy" inherits="UICheckButtonTemplate">
 						<Anchors>
@@ -334,19 +317,19 @@
 		</Frames>
 		<Scripts>
 			<OnLoad>
----------------------------------- testing WoW version
-local wowversion, wowbuild, wowdate, wowtocversion = GetBuildInfo()
-if (wowtocversion > 90000) then Mixin(self, BackdropTemplateMixin) end
----------------------------------- same code for 8.x and 9.x
-self:SetBackdrop({
-	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", 
-	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-	tile = true,
-	tileSize = 32,
-	edgeSize = 32,
-	insets = {left = 12, right = 12, top = 12, bottom = 12},
-})
-----------------------------------
+				---------------------------------- testing WoW version
+				local wowversion, wowbuild, wowdate, wowtocversion = GetBuildInfo()
+				if (wowtocversion > 90000) then Mixin(self, BackdropTemplateMixin) end
+				---------------------------------- same code for 8.x and 9.x
+				self:SetBackdrop({
+					bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+					edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+					tile = true,
+					tileSize = 32,
+					edgeSize = 32,
+					insets = {left = 12, right = 12, top = 12, bottom = 12},
+				})
+				----------------------------------
 			GuildTithe[1].LoadOptionsFrame(self)</OnLoad>
 			<OnShow>GuildTithe[1].UpdateOptions(self)</OnShow>
 			<OnHide>GuildTithe[1].SaveOptions(self)</OnHide>
@@ -359,13 +342,6 @@ self:SetBackdrop({
 		<Anchors>
 			<Anchor point="CENTER"/>
 		</Anchors>
-		<Backdrop edgeFile="Interface\Tooltips\UI-Tooltip-Border" bgFile="Interface\DialogFrame\UI-DialogBox-Background" tile="true">
-			<BackgroundInsets>
-				<AbsInset left="4" right="4" top="4" bottom="4" />
-			</BackgroundInsets>
-			<TileSize> <AbsValue val="32"/> </TileSize>
-			<EdgeSize> <AbsValue val="16"/> </EdgeSize>
-		</Backdrop>
 		<Frames>
 			<Button name="$parent_Close" inherits="UIPanelCloseButton">
 				<Size x="20" y="20" />
@@ -402,19 +378,19 @@ self:SetBackdrop({
 		</Layers>
 		<Scripts>
 			<OnLoad>
----------------------------------- testing WoW version
-local wowversion, wowbuild, wowdate, wowtocversion = GetBuildInfo()
-if (wowtocversion > 90000) then Mixin(self, BackdropTemplateMixin) end
----------------------------------- same code for 8.x and 9.x
-self:SetBackdrop({
-	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", 
-	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-	tile = true,
-	tileSize = 12,
-	edgeSize = 20,
-	insets = {left = 4, right = 4, top = 4, bottom = 4},
-})
-----------------------------------
+				---------------------------------- testing WoW version
+				local wowversion, wowbuild, wowdate, wowtocversion = GetBuildInfo()
+				if (wowtocversion > 90000) then Mixin(self, BackdropTemplateMixin) end
+				---------------------------------- same code for 8.x and 9.x
+				self:SetBackdrop({
+					bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+					edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+					tile = true,
+					tileSize = 12,
+					edgeSize = 20,
+					insets = {left = 4, right = 4, top = 4, bottom = 4},
+				})
+				----------------------------------
 			
 			GuildTithe[1].FrameScript_MiniTitheFrameOnLoad(self)</OnLoad>
 			<OnDragStart>self:StartMoving()</OnDragStart>
