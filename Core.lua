@@ -1,12 +1,13 @@
-﻿--[[
+--[[
 ------------------------------------------------------------------------
-	Project: GuildTithe
-	File: Core rev. 120
-	Date: 2014-10-17T03:32:15Z
+	Project: GuildTithe Reincarnated
+	File: Core rev. 121
+	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
-	Credits: Code written by Vandesdelca32
+	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
 
 	Copyright (C) 2011  Vandesdelca32
+	Copyright (C) 2024  Miragosa
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -38,11 +39,11 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	local v, rev = (GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('120') or "???")
+	local v, rev = (GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('121') or "???")
 
 	--[===[@debug@
 	-- If this code is run, it's an unpackaged version, show this:
-	if v == "release_v2.5.15" then v = "DEV_VERSION"; end
+	if v == "release_v2.6.0" then v = "DEV_VERSION"; end
 	--@end-debug@]===]
 
 	if short then
@@ -384,7 +385,7 @@ function E:OnChatCommand(msg)
 		end
 
 	-- Show the options frame, we don't save this
-	elseif cmd == "options" or cmd == "config" then
+	elseif cmd == "options" or cmd == "config" or cmd == "show" then
 		GT_OptionsFrame:Show()
 
 	-- Get the current tithe
@@ -435,7 +436,6 @@ function GuildTithe_OnLoad(self)
 	self:RegisterEvent("ADDON_LOADED")
 	-- The money events.
 	self:RegisterEvent("CHAT_MSG_MONEY")
-	self:RegisterEvent("GUILDBANKFRAME_OPENED")
 	self:RegisterEvent("MAIL_SHOW")
 	self:RegisterEvent("MAIL_CLOSED")
 	self:RegisterEvent("MERCHANT_SHOW")
@@ -444,6 +444,8 @@ function GuildTithe_OnLoad(self)
 	self:RegisterEvent("TRADE_CLOSED") -- Trade closed
 	self:RegisterEvent("TRADE_MONEY_CHANGED") -- Player's money was updated (used after a trade)
 	self:RegisterEvent("TRADE_REQUEST_CANCEL") -- Cancelled trade.
+	self:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
+	self:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
 
 	--Other events
 	self:RegisterEvent("CHAT_MSG_SYSTEM") -- Quest rewards
@@ -507,6 +509,7 @@ end
 
 function E.EventHandler(self, event, ...)
 	local arg1, arg2, arg3, arg4 = ...
+
 	if event == "ADDON_LOADED" and arg1 == "GuildTithe" then
 		return E:Init()
 
@@ -516,7 +519,6 @@ function E.EventHandler(self, event, ...)
 		-- Skin the frames
 		E:SkinFrames()
 		if not E.Loaded then
-
 			E:PrintMessage(format(L.Loaded, E:GetVerString()))
 			E:PrintDebug("Loaded in §bDebug Mode§r! This will print a lot of extra, mostly useless information to your chat. You can disable debug mode by unchecking the box marked \"Debug mode\" in the options.")
 			E:SetTimer(2, function()
@@ -526,21 +528,20 @@ function E.EventHandler(self, event, ...)
 			E.Loaded = true
 		end
 
-	-- GUILDBANKFRAME_OPENED: The GB was opened, deposit the outstanding tithe.
-	elseif event == "GUILDBANKFRAME_OPENED" then
-	-- WAIT 3 SECONDS FOR GB TO FULLY OPEN
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 10 then
 		C_Timer.After(3, function() E:DepositTithe() end)
 
 	-- Mail_*: Update outstanding tithe from Mail soruces
-	elseif event == "MAIL_SHOW" then
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 17 then
 		return E:UpdateOutstandingTithe("Mail")
-	elseif event == "MAIL_CLOSED" then
+
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == 17 then
 		return E:UpdateOutstandingTithe("Mail", true)
 
 	-- Merchant_*: Update outstanding tithe from merchants
-	elseif event == "MERCHANT_SHOW" then
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 5 then
 		return E:UpdateOutstandingTithe("Merchant")
-	elseif event == "MERCHANT_CLOSED" then
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == 5 then
 		return E:UpdateOutstandingTithe("Merchant", true)
 
 	-- TRADE_*: Update trade amounts;
@@ -570,6 +571,3 @@ function E.EventHandler(self, event, ...)
 		GT_OptionsFrame:SetUserPlaced(false)
 	end
 end
-
-
-
