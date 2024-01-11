@@ -1,6 +1,6 @@
 An addon for World of Warcraft.
 
-This is a resurrection of the GuildTithe addon that stopped working in Shadowlands due to API changes introduced in 10.0 (Dragonflight). Version 2.6 addresses these changes.
+This is a resurrection of the GuildTithe addon that stopped working after Shadowlands due to API changes introduced in 10.0 (Dragonflight). Version 2.6 addresses these changes.
 
 A tithe (derived from the Old English word for "tenth") is the practice of giving ten percent of something (often money) to a religious organisation or government.
 
