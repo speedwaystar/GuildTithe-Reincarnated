@@ -1,16 +1,15 @@
-## Author: Vandesdelca32
-## Interface: 90000
-## Notes: Implements a guild bank tithe, allowing you to auto-deposit a percentage of your income (from various sources) into the guild bank. Originally written by botono9, this version contains much-needed code updates.
+## Author: Miragosa
+## Interface: 100200
+## Notes: Implements a guild bank tithe, allowing you to auto-deposit a percentage of your income (from various sources) into the guild bank. Originally written by botono9, this version contains much-needed code updates. Updated for Dragonflight (and later) by Miragosa.
 ## SavedVariablesPerCharacter: GuildTithe_SavedDB
-## Title: GuildTithe
-## Version: release_v2.5.15
+## Title: GuildTithe Reincarnated
+## Version: release_v2.6.0
 ## OptionalDeps: ElvUI
-## Author: Vandesdelca32
+## Author: Miragosa (previously maintained by Vandesdelca32)
 ## X-OriginalAuthor: botono9
-## X-Curse-Packaged-Version: release_v2.5.15
-## X-Curse-Project-Name: Guild Tithe
-## X-Curse-Project-ID: guild-tithe
-## X-Curse-Repository-ID: wow/guild-tithe/mainline
+## X-Curse-Packaged-Version: release_v2.6.0
+## X-Curse-Project-Name: GuildTithe Reincarnated
+## X-Curse-Project-ID: guild-tithe-reincarnated
 
 #Libraries
 embeds.xml
@@ -21,5 +20,3 @@ GlobalStrings.lua
 
 Core.lua
 GuildTitheFrames.xml
-
-
