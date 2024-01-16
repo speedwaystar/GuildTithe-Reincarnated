@@ -529,12 +529,11 @@ function E.EventHandler(self, event, ...)
 		end
 
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 10 then
-		C_Timer.After(3, function() E:DepositTithe() end)
+		C_Timer.After(1, function() E:DepositTithe() end)
 
 	-- Mail_*: Update outstanding tithe from Mail soruces
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 17 then
 		return E:UpdateOutstandingTithe("Mail")
-
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == 17 then
 		return E:UpdateOutstandingTithe("Mail", true)
 
