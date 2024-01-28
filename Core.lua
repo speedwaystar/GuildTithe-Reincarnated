@@ -334,6 +334,7 @@ function E:DepositTithe(clicked, isMail)
 			SendMailMoneyCopper:SetText(copperAmount)
 		else
 			DepositGuildBankMoney(GuildTithe_SavedDB.CurrentTithe)
+			self:PrintMessage("Deposited " .. GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))
 		end
 	end
 
