@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 123
+	File: Core rev. 124
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -39,7 +39,7 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	local v, rev = (GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('123') or "???")
+	local v, rev = (GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('124') or "???")
 
 	--[===[@debug@
 	-- If this code is run, it's an unpackaged version, show this:
