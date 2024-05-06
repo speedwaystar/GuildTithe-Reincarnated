@@ -14,4 +14,4 @@ GuildTithe allows you to configure how much you wish to donate to your guild ban
 
 Each slider can be set from 1% to 100%, and each category is turned off by default.
 
-The deposit of accumulated tithe will take place approximately one second after the guild bank window is opened.
+The deposit of accumulated tithe will take place shortly after the guild bank window is opened.
