@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 124
+	File: Core rev. 125
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -39,7 +39,7 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	local v, rev = (GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('124') or "???")
+	local v, rev = (GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('125') or "???")
 
 	--[===[@debug@
 	-- If this code is run, it's an unpackaged version, show this:
@@ -530,7 +530,7 @@ function E.EventHandler(self, event, ...)
 		end
 
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 10 then
-		C_Timer.After(1, function() E:DepositTithe() end)
+		C_Timer.After(2, function() E:DepositTithe() end)
 
 	-- Mail_*: Update outstanding tithe from Mail soruces
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 17 then
