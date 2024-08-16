@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 126
+	File: Core rev. 127
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -39,7 +39,7 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('126') or "???")
+	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('127') or "???")
 
 	--[===[@debug@
 	-- If this code is run, it's an unpackaged version, show this:
@@ -571,3 +571,23 @@ function E.EventHandler(self, event, ...)
 		GT_OptionsFrame:SetUserPlaced(false)
 	end
 end
+
+-- Support addon compartment.
+local aboutText = "GuildTithe";
+local mouseButtonNote = "\nShow configuration window";
+AddonCompartmentFrame:RegisterAddon({
+	text = aboutText,
+	icon = "Interface\\ICONS\\inv_misc_coin_17.blp",
+	notCheckable = true,
+	func = function(button, menuInputData, menu)
+		GT_OptionsFrame:Show()
+	end,
+	funcOnEnter = function(button)
+		MenuUtil.ShowTooltip(button, function(tooltip)
+			tooltip:SetText(aboutText .. mouseButtonNote)
+		end)
+	end,
+	funcOnLeave = function(button)
+		MenuUtil.HideTooltip(button)
+	end,
+})
