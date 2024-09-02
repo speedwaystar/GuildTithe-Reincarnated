@@ -7,6 +7,9 @@
 	Credits: Code written by Vandesdelca32
 
     Copyright (C) 2011  Vandesdelca32
+    This version made in 2023-later by Miragosa.
+
+    Released to public domain.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
