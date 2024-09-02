@@ -171,7 +171,7 @@ end
 
 function E.FrameScript_MiniTitheFrameOnClick(self, button)
 	E:PrintDebug("MiniFrame OnClick()")
-	if IsAddOnLoaded("Blizzard_GuildBankUI") and GuildBankFrame:IsVisible() then
+	if C_AddOns.IsAddOnLoaded("Blizzard_GuildBankUI") and GuildBankFrame:IsVisible() then
 		E:DepositTithe(1)
 	elseif SendMailFrame:IsVisible() then
 		E:DepositTithe(1,1)
