@@ -286,7 +286,7 @@ function E:UpdateOutstandingTithe(source, update, ...)
 
 		-- Tell the user what we collected if they want to know
 		if GuildTithe_SavedDB.Spammy and actualTithe > 0 then
-			self:PrintMessage(format(L.ChatSpammyCollectedAmount, GetCoinTextureString(actualTithe), strlower(source)))
+			self:PrintMessage(format(L.ChatSpammyCollectedAmount, C_CurrencyInfo.GetCoinTextureString(actualTithe), strlower(source)))
 		end
 	else
 		self:PrintDebug("   " .. source .. " not collecting", true)
@@ -316,14 +316,25 @@ function E:DepositTithe(clicked, isMail)
 		return
 	end
 
+
+	-- auto prorate tithe when bank will exceed GOLD_CAP
+	local GOLD_CAP = (9999999 * COPPER_PER_GOLD) + (99 * COPPER_PER_SILVER) + 99
+	local tithe = GuildTithe_SavedDB.CurrentTithe
+	local bank = GetGuildBankMoney()
+
+	if bank + tithe > GOLD_CAP then
+		tithe = GOLD_CAP - bank
+		--self:PrintDebug("   Bank at gold cap. Depositing " .. C_CurrencyInfo.GetCoinTextureString(tithe) .. " of " .. C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))
+	end
+
 	-- Make sure the player has enough money first, then spam them out if they don't!
-	if GetMoney() < GuildTithe_SavedDB.CurrentTithe then
+	if GetMoney() < tithe then
 		self:PrintMessage(L["ChatNotEnoughFunds"], true)
 		return
 	end
 
 	-- Deposit the money, then reset CurrentTithe and update TotalTithe
-	if not self.DebugMode then
+	if not E._DebugMode then
 		if isMail then
 			-- postal fix
 			local goldAmount = floor(GuildTithe_SavedDB.CurrentTithe / COPPER_PER_GOLD)
@@ -333,22 +344,25 @@ function E:DepositTithe(clicked, isMail)
 			SendMailMoneySilver:SetText(silverAmount)
 			SendMailMoneyCopper:SetText(copperAmount)
 		else
-			DepositGuildBankMoney(GuildTithe_SavedDB.CurrentTithe)
-			self:PrintMessage("Deposited " .. GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))
+			DepositGuildBankMoney(tithe)
 		end
 	end
 
-	if GuildTithe_SavedDB.Spammy then
-		self:PrintMessage(format(L.ChatDepositTitheAmount, GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)))
+	if GuildTithe_SavedDB.Spammy or E._DebugMode then
+		if tithe ~= GuildTithe_SavedDB.CurrentTithe then
+			self:PrintMessage(format(L.ChatDepositToGoldCap, C_CurrencyInfo.GetCoinTextureString(tithe), C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)))
+		else
+			self:PrintMessage(L.ChatDepositTitheAmount, C_CurrencyInfo.GetCoinTextureString(tithe), false, E._DebugMode)
+		end
 	end
-	self:PrintDebug("   Deposit amount = " .. GuildTithe_SavedDB.CurrentTithe)
 
-	GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + GuildTithe_SavedDB.CurrentTithe
+	GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + tithe
+	GuildTithe_SavedDB.CurrentTithe = GuildTithe_SavedDB.CurrentTithe - tithe
+
 	if not GuildTithe_SavedDB.LDBDisplayTotal or not E.ShowTotalTimer then
 		GuildTithe_SavedDB.LDBDisplayTotal = true
 		E.ShowTotalTimer = E:SetTimer(10, function() GuildTithe_SavedDB.LDBDisplayTotal = false; end)
 	end
-	GuildTithe_SavedDB.CurrentTithe = 0
 end
 
 local numHelpLines = 10
@@ -391,7 +405,7 @@ function E:OnChatCommand(msg)
 
 	-- Get the current tithe
 	elseif cmd == "current" or cmd == "tithe" then
-		self:PrintMessage(L.ChatOutstandingTithe, GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))
+		self:PrintMessage(L.ChatOutstandingTithe, C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))
 	-- Show/hide or toggle the mini frame.
 	elseif cmd == "mini" then
 		-- Show or hide the mini frame, this can be forced, or toggled when passed with no args
@@ -425,7 +439,7 @@ function E:OnChatCommand(msg)
 
 
 	elseif cmd == "total" then
-		self:PrintMessage(format(L.OptionsTotalTitheText, GetCoinTextureString(GuildTithe_SavedDB.TotalTithe)))
+		self:PrintMessage(format(L.OptionsTotalTitheText, C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.TotalTithe)))
 	else
 		-- This is where we're going to actually print the help info... Later though.
 		self:PrintMessage(format(L.ChatCommandNotFound, msg), true)
@@ -523,25 +537,25 @@ function E.EventHandler(self, event, ...)
 			E:PrintMessage(format(L.Loaded, E:GetVerString()))
 			E:PrintDebug("Loaded in §bDebug Mode§r! This will print a lot of extra, mostly useless information to your chat. You can disable debug mode by unchecking the box marked \"Debug mode\" in the options.")
 			E:SetTimer(2, function()
-					GT_MiniTitheFrame.CurrentTithe:SetText(GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe));
+					GT_MiniTitheFrame.CurrentTithe:SetText(C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe));
 					E.Info.LDBData.text = GetLDBCoinString();
 			end, true, "GT_CTUPDATE")
 			E.Loaded = true
 		end
 
-	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 10 then
-		C_Timer.After(2, function() E:DepositTithe() end)
-
-	-- Mail_*: Update outstanding tithe from Mail sources
-	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 17 then
+	-- GUILDBANKFRAME_OPENED: The GB was opened, deposit the outstanding tithe.
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
+		E:DepositTithe()
+		-- Mail_*: Update outstanding tithe from Mail sources
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.MailInfo then
 		return E:UpdateOutstandingTithe("Mail")
-	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == 17 then
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.MailInfo then
 		return E:UpdateOutstandingTithe("Mail", true)
 
 	-- Merchant_*: Update outstanding tithe from merchants
-	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == 5 then
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.Merchant then
 		return E:UpdateOutstandingTithe("Merchant")
-	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == 5 then
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.MailInfo then
 		return E:UpdateOutstandingTithe("Merchant", true)
 
 	-- TRADE_*: Update trade amounts;

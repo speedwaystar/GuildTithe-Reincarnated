@@ -1,4 +1,4 @@
-﻿--[[
+--[[
 ------------------------------------------------------------------------
 	Project: GuildTithe
 	File: Frame scripts rev. 118
@@ -131,11 +131,11 @@ function E.FrameScript_UpdateOptionRow(self)
 	if not self:GetChecked() then
 		self:GetParent().Text:Disable();
 		self:GetParent().Slider:Disable();
-		PlaySound(857)
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
 	else
 		self:GetParent().Slider:Enable();
 		self:GetParent().Text:Enable();
-		PlaySound(856)
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	end
 end
 
@@ -277,7 +277,7 @@ function E.UpdateOptions(self)
 	self.Extra.SkinElv:SetChecked(GuildTithe_SavedDB.SkinElvUI)
 
 	-- Total Tithe
-	self.TotalTithe.text:SetFormattedText(L.OptionsTotalTitheText,  GetCoinTextureString(GuildTithe_SavedDB.TotalTithe))
+	self.TotalTithe.text:SetFormattedText(L.OptionsTotalTitheText,  C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.TotalTithe))
 
 	-- Force the frame to properly update state.
 	E.FrameScript_UpdateOptionRow(self.QuestOptions.Check)
@@ -285,7 +285,7 @@ function E.UpdateOptions(self)
 	E.FrameScript_UpdateOptionRow(self.MerchantOptions.Check)
 	E.FrameScript_UpdateOptionRow(self.MailOptions.Check)
 	E.FrameScript_UpdateOptionRow(self.TradeOptions.Check)
-	PlaySound(850)
+	PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
 end
 
 -- Save the config when the user closes the form.
@@ -337,6 +337,6 @@ function E.SaveOptions(self)
 	else
 		E._DebugMode = false
 	end
-	PlaySound(851)
+	PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
 end
 
