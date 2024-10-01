@@ -11,6 +11,7 @@ function GTLocale.Get_enUS_Strings()
 L["ChatAutoDepositDisabled"] = "Automatic deposits are disabled."
 L["ChatCommandNotFound"] = "§b\"%s\"§r was not found. §b/gt help§r shows the commands list."
 L["ChatDepositTitheAmount"] = "Automatically deposited %s."
+L["ChatDepositToGoldCap"] = "Automatically deposited %s of %s (guild bank at gold cap)."
 L["ChatHelpLine1"] = "=== Version §b%s§r - Help ==="
 L["ChatHelpLine10"] = "total -- Show the total amount you've tithed."
 L["ChatHelpLine2"] = "Arguments in brackets are optional. Commands separated by slashes are interchangeable."
