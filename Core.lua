@@ -27,6 +27,7 @@
 -- Import engine and the localization table.
 local addonName, _ = ...
 local E, L = unpack(select(2, ...))
+local GOLD_CAP = (9999999 * COPPER_PER_GOLD) + (99 * COPPER_PER_SILVER) + 99
 
 --debugArgs: Returns literal "nil" or the tostring of all of the arguments passed to it.
 function E:debugArgs(...)
@@ -318,13 +319,11 @@ function E:DepositTithe(clicked, isMail)
 
 
 	-- auto prorate tithe when bank will exceed GOLD_CAP
-	local GOLD_CAP = (9999999 * COPPER_PER_GOLD) + (99 * COPPER_PER_SILVER) + 99
 	local tithe = GuildTithe_SavedDB.CurrentTithe
 	local bank = GetGuildBankMoney()
 
 	if bank + tithe > GOLD_CAP then
 		tithe = GOLD_CAP - bank
-		--self:PrintDebug("   Bank at gold cap. Depositing " .. C_CurrencyInfo.GetCoinTextureString(tithe) .. " of " .. C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))
 	end
 
 	-- Make sure the player has enough money first, then spam them out if they don't!
@@ -352,7 +351,7 @@ function E:DepositTithe(clicked, isMail)
 		if tithe ~= GuildTithe_SavedDB.CurrentTithe then
 			self:PrintMessage(format(L.ChatDepositToGoldCap, C_CurrencyInfo.GetCoinTextureString(tithe), C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)))
 		else
-			self:PrintMessage(L.ChatDepositTitheAmount, C_CurrencyInfo.GetCoinTextureString(tithe), false, E._DebugMode)
+			self:PrintMessage(format(L.ChatDepositTitheAmount, C_CurrencyInfo.GetCoinTextureString(tithe), false, E._DebugMode))
 		end
 	end
 
@@ -365,7 +364,7 @@ function E:DepositTithe(clicked, isMail)
 	end
 end
 
-local numHelpLines = 10
+local numHelpLines = 12
 -- Print Help
 function E:PrintHelpMessages()
 	for i = 1, numHelpLines do
@@ -377,12 +376,20 @@ function E:PrintHelpMessages()
 	end
 end
 
-
 -- Handles slash commands
 function E:OnChatCommand(msg)
-	self:PrintDebug("OnChatCommand(" .. self:debugArgs(msg) .. ")")
 	local cmd, args = strsplit(" ", strlower(msg))
+
+	-- toggle debug mode without opening the config window
+	if cmd == "debug" then
+		E._DebugMode = not E._DebugMode
+		self:PrintMessage(format(L.ChatCommandToggleDebug, tostring(E._DebugMode)), false, E._DebugMode )
+		return
+	end
+	
+	self:PrintDebug("OnChatCommand(" .. self:debugArgs(msg) .. ")")
 	self:PrintDebug("cmd = " .. tostring(cmd) .. ", args = " .. tostring(args))
+	
 	if msg == "" or cmd == "help" then
 		-- Print Help
 		self:PrintHelpMessages()
@@ -405,7 +412,8 @@ function E:OnChatCommand(msg)
 
 	-- Get the current tithe
 	elseif cmd == "current" or cmd == "tithe" then
-		self:PrintMessage(L.ChatOutstandingTithe, C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))
+		self:PrintMessage(format(L.ChatOutstandingTithe, C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)))
+
 	-- Show/hide or toggle the mini frame.
 	elseif cmd == "mini" then
 		-- Show or hide the mini frame, this can be forced, or toggled when passed with no args
@@ -436,12 +444,26 @@ function E:OnChatCommand(msg)
 			end
 		end
 
-
-
+	-- display tithe running total
 	elseif cmd == "total" then
 		self:PrintMessage(format(L.OptionsTotalTitheText, C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.TotalTithe)))
+
+	-- set the tithe to an arbitrary value (0 to GOLD_CAP)
+	elseif cmd == "set" then
+		local newTithe = tonumber(args)
+		if not newTithe then
+			self:PrintErr(L.ChatCommandSetSyntax)
+		elseif newTithe < 0 then
+			self:PrintErr(L.ChatCommandSetNegative)
+		elseif newTithe > GOLD_CAP then
+			self:PrintErr(L.ChatCommandSetOverCap)
+		else
+			GuildTithe_SavedDB.CurrentTithe = newTithe
+			self:PrintMessage(format(L.ChatOutstandingTithe, C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)))
+		end
+
+	-- This is where we're going to actually print the help info... Later though.
 	else
-		-- This is where we're going to actually print the help info... Later though.
 		self:PrintMessage(format(L.ChatCommandNotFound, msg), true)
 	end
 end
