@@ -40,7 +40,8 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('128') or "???")
+	CURRENT_REVISION = 129
+	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), CURRENT_REVISION
 
 	--[===[@debug@
 	-- If this code is run, it's an unpackaged version, show this:
