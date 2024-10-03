@@ -354,13 +354,15 @@ function E:DepositTithe(clicked, isMail)
 			self:PrintMessage(format(L.ChatDepositTitheAmount, C_CurrencyInfo.GetCoinTextureString(tithe), false, E._DebugMode))
 		end
 	end
+	
+	if not E._DebugMode then
+		GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + tithe
+		GuildTithe_SavedDB.CurrentTithe = GuildTithe_SavedDB.CurrentTithe - tithe
 
-	GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + tithe
-	GuildTithe_SavedDB.CurrentTithe = GuildTithe_SavedDB.CurrentTithe - tithe
-
-	if not GuildTithe_SavedDB.LDBDisplayTotal or not E.ShowTotalTimer then
-		GuildTithe_SavedDB.LDBDisplayTotal = true
-		E.ShowTotalTimer = E:SetTimer(10, function() GuildTithe_SavedDB.LDBDisplayTotal = false; end)
+		if not GuildTithe_SavedDB.LDBDisplayTotal or not E.ShowTotalTimer then
+			GuildTithe_SavedDB.LDBDisplayTotal = true
+			E.ShowTotalTimer = E:SetTimer(10, function() GuildTithe_SavedDB.LDBDisplayTotal = false; end)
+		end
 	end
 end
 
