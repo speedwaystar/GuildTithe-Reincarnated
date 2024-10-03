@@ -40,7 +40,8 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), (tonumber('128') or "???")
+	CURRENT_REVISION = 129
+	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), CURRENT_REVISION
 
 	--[===[@debug@
 	-- If this code is run, it's an unpackaged version, show this:
@@ -312,7 +313,7 @@ function E:DepositTithe(clicked, isMail)
 	-- Sanity Check, (stop the error speech when trying to deposit 0c)
 	if GuildTithe_SavedDB.CurrentTithe == 0 then
 		if GuildTithe_SavedDB.Spammy then
-			self:PrintMessage(L.ChatNothingToDeposit, true)
+			self:PrintMessage(L.ChatNothingToDeposit)
 		end
 		return
 	end
@@ -355,12 +356,14 @@ function E:DepositTithe(clicked, isMail)
 		end
 	end
 
-	GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + tithe
-	GuildTithe_SavedDB.CurrentTithe = GuildTithe_SavedDB.CurrentTithe - tithe
+	if not E._DebugMode then
+		GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + tithe
+		GuildTithe_SavedDB.CurrentTithe = GuildTithe_SavedDB.CurrentTithe - tithe
 
-	if not GuildTithe_SavedDB.LDBDisplayTotal or not E.ShowTotalTimer then
-		GuildTithe_SavedDB.LDBDisplayTotal = true
-		E.ShowTotalTimer = E:SetTimer(10, function() GuildTithe_SavedDB.LDBDisplayTotal = false; end)
+		if not GuildTithe_SavedDB.LDBDisplayTotal or not E.ShowTotalTimer then
+			GuildTithe_SavedDB.LDBDisplayTotal = true
+			E.ShowTotalTimer = E:SetTimer(10, function() GuildTithe_SavedDB.LDBDisplayTotal = false; end)
+		end
 	end
 end
 
