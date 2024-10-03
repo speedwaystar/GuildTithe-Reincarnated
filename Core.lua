@@ -312,7 +312,7 @@ function E:DepositTithe(clicked, isMail)
 	-- Sanity Check, (stop the error speech when trying to deposit 0c)
 	if GuildTithe_SavedDB.CurrentTithe == 0 then
 		if GuildTithe_SavedDB.Spammy then
-			self:PrintMessage(L.ChatNothingToDeposit, true)
+			self:PrintMessage(L.ChatNothingToDeposit)
 		end
 		return
 	end
@@ -354,7 +354,7 @@ function E:DepositTithe(clicked, isMail)
 			self:PrintMessage(format(L.ChatDepositTitheAmount, C_CurrencyInfo.GetCoinTextureString(tithe), false, E._DebugMode))
 		end
 	end
-	
+
 	if not E._DebugMode then
 		GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + tithe
 		GuildTithe_SavedDB.CurrentTithe = GuildTithe_SavedDB.CurrentTithe - tithe
