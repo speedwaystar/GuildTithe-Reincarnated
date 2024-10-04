@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 128
+	File: Core rev. 129
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -78,6 +78,7 @@ local SettingsDefaults = {
 	MiniFrameLocked = false,
 	SkinElvUI = true,
 	LDBDisplayTotal = false,
+	PrettyLDB = false,
 }
 
 -- Get the coin string for the databroker icon, because it needs to be shorter.
@@ -109,7 +110,16 @@ local function GetLDBCoinString()
 			text = format("%s|cffeda55fc|r", copper)
 		end
 	end
-	return text
+
+	if GuildTithe_SavedDB.PrettyLDB then
+		if GuildTithe_SavedDB.LDBDisplayTotal then
+			return "Total: " .. C_CurrencyInfo.GetCoinTextureString(tt)
+		else
+			return "Tithe: " .. C_CurrencyInfo.GetCoinTextureString(ct)
+		end
+	else
+		return text
+	end
 end
 
 function E:Init()
@@ -161,6 +171,11 @@ function E:Init()
 	GT_MiniTitheFrame:EnableMouse(not GuildTithe_SavedDB.MiniFrameLocked)
 	if GuildTithe_SavedDB.MiniFrameShown then
 		GT_MiniTitheFrame:Show()
+	end
+
+	--existing users won't have a setting for PrettyLDB. Fix that. (Defaults to off to preserve existing behavior)
+	if (GuildTithe_SavedDB.PrettyLDB == nil or GuildTithe_SavedDB.PrettyLDB == '') then
+		GuildTithe_SavedDB.PrettyLDB = false
 	end
 end
 
@@ -389,10 +404,10 @@ function E:OnChatCommand(msg)
 		self:PrintMessage(format(L.ChatCommandToggleDebug, tostring(E._DebugMode)), false, E._DebugMode )
 		return
 	end
-	
+
 	self:PrintDebug("OnChatCommand(" .. self:debugArgs(msg) .. ")")
 	self:PrintDebug("cmd = " .. tostring(cmd) .. ", args = " .. tostring(args))
-	
+
 	if msg == "" or cmd == "help" then
 		-- Print Help
 		self:PrintHelpMessages()
@@ -416,6 +431,17 @@ function E:OnChatCommand(msg)
 	-- Get the current tithe
 	elseif cmd == "current" or cmd == "tithe" then
 		self:PrintMessage(format(L.ChatOutstandingTithe, C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)))
+
+	-- Toggle pretty LDB display (requires more room on LDB bar than existing basic default)
+	elseif cmd == "prettyldb" then
+		if args == "on" then
+			GuildTithe_SavedDB.PrettyLDB = true
+		elseif args == "off" then
+			GuildTithe_SavedDB.PrettyLDB = false
+		else -- No args clause, toggle.
+			GuildTithe_SavedDB.PrettyLDB = not(GuildTithe_SavedDB.PrettyLDB)
+		end
+		E.Info.LDBData.text = GetLDBCoinString()
 
 	-- Show/hide or toggle the mini frame.
 	elseif cmd == "mini" then
@@ -568,8 +594,8 @@ function E.EventHandler(self, event, ...)
 			E.Loaded = true
 		end
 
-	-- GUILDBANKFRAME_OPENED: The GB was opened, deposit the outstanding tithe.
-	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
+	-- GUILDBANKFRAME_OPENED: The GB was closed, deposit the outstanding tithe.
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
 		E:DepositTithe()
 		-- Mail_*: Update outstanding tithe from Mail sources
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.MailInfo then
