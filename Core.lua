@@ -79,7 +79,7 @@ local SettingsDefaults = {
 	SkinElvUI = true,
 	LDBDisplayTotal = false,
 	PrettyLDB = false,
-	DepositOnBankOpen = true,
+	DepositOnBankHide = false,
 }
 
 -- Get the coin string for the databroker icon, because it needs to be shorter.
@@ -167,7 +167,7 @@ function E:Init()
 	if not GuildTithe_SavedDB or GuildTithe_SavedDB.SettingsVer < SettingsDefaults.SettingsVer then
 		GuildTithe_SavedDB = SettingsDefaults
 	end
-
+	
 	-- Load the frames
 	GT_MiniTitheFrame:EnableMouse(not GuildTithe_SavedDB.MiniFrameLocked)
 	if GuildTithe_SavedDB.MiniFrameShown then
@@ -177,6 +177,10 @@ function E:Init()
 	--existing users won't have a setting for PrettyLDB. Fix that. (Defaults to off to preserve existing behavior)
 	if (GuildTithe_SavedDB.PrettyLDB == nil or GuildTithe_SavedDB.PrettyLDB == '') then
 		GuildTithe_SavedDB.PrettyLDB = false
+	end
+
+	if GuildTithe_SavedDB.DepositOnBankHide == nil then
+		GuildTithe_SavedDB.DepositOnBankHide = false
 	end
 end
 
@@ -362,6 +366,7 @@ function E:DepositTithe(clicked, isMail)
 			SendMailMoneyCopper:SetText(copperAmount)
 		else
 		-- begin temporary test spam
+
 		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
 		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
 		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
@@ -407,7 +412,7 @@ function E:PrintHelpMessages()
 	self:PrintMessage("=== Status ===")
 	self:PrintMessage(format(L.ChatCommandToggleDebug, tostring(E._DebugMode)), false, E._DebugMode )
 	self:PrintMessage(format(L.ChatCommandToggleChat, tostring(GuildTithe_SavedDB.Spammy)))
-	self:PrintMessage(format("Deposit on bank window frame %s.", GREEN_FONT_COLOR:WrapTextInColorCode( tostring(GuildTithe_SavedDB.DepositOnBankOpen and "show" or "hide"))))
+	self:PrintMessage(format(L.ChatCommandDepositOnBankHide ,tostring(GuildTithe_SavedDB.DepositOnBankHide)))
 end
 
 -- Handles slash commands
@@ -525,13 +530,15 @@ function E:OnChatCommand(msg)
 		self:PrintMessage(format(L.ChatCommandToggleChat, tostring(GuildTithe_SavedDB.Spammy)))
 
 	-- deposit on bank window open or close (potential fix for server lag)
-	elseif cmd == "bank" then
-		if args == "show" or args == "open" then
-			GuildTithe_SavedDB.DepositOnBankOpen = true
-		elseif args == "hide" or args == "close" or args == "closed" then
-			GuildTithe_SavedDB.DepositOnBankOpen = false
+	elseif cmd == "bankhide" then
+		if args == "on" or args == "true" then
+			GuildTithe_SavedDB.DepositOnBankHide = true
+		elseif args == "off" or args == "false" then
+			GuildTithe_SavedDB.DepositOnBankHide = false
+		else
+			GuildTithe_SavedDB.DepositOnBankHide = not GuildTithe_SavedDB.DepositOnBankHide
 		end
-		self:PrintMessage(format("Deposit on bank window frame %s.", GREEN_FONT_COLOR:WrapTextInColorCode(tostring(GuildTithe_SavedDB.DepositOnBankOpen and "show" or "hide"))))
+		self:PrintMessage(format(L.ChatCommandDepositOnBankHide, tostring(GuildTithe_SavedDB.DepositOnBankHide)))
 
 	-- This is where we're going to actually print the help info... Later though.
 	else
@@ -638,11 +645,11 @@ function E.EventHandler(self, event, ...)
 
 	-- GUILDBANKFRAME_OPENED: The GB was opened, deposit the outstanding tithe.
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
-		if GuildTithe_SavedDB.DepositOnBankOpen then
+		if not GuildTithe_SavedDB.DepositOnBankHide then
 			E:DepositTithe()
 		end
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
-		if not GuildTithe_SavedDB.DepositOnBankOpen then
+		if GuildTithe_SavedDB.DepositOnBankHide then
 			E:DepositTithe()
 		end
 		-- Mail_*: Update outstanding tithe from Mail sources
