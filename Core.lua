@@ -40,7 +40,7 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	CURRENT_REVISION = 129
+	CURRENT_REVISION = 130
 	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), CURRENT_REVISION
 
 	--[===[@debug@
@@ -79,6 +79,7 @@ local SettingsDefaults = {
 	SkinElvUI = true,
 	LDBDisplayTotal = false,
 	PrettyLDB = false,
+	DepositOnBankHide = false,
 }
 
 -- Get the coin string for the databroker icon, because it needs to be shorter.
@@ -166,7 +167,7 @@ function E:Init()
 	if not GuildTithe_SavedDB or GuildTithe_SavedDB.SettingsVer < SettingsDefaults.SettingsVer then
 		GuildTithe_SavedDB = SettingsDefaults
 	end
-
+	
 	-- Load the frames
 	GT_MiniTitheFrame:EnableMouse(not GuildTithe_SavedDB.MiniFrameLocked)
 	if GuildTithe_SavedDB.MiniFrameShown then
@@ -176,6 +177,10 @@ function E:Init()
 	--existing users won't have a setting for PrettyLDB. Fix that. (Defaults to off to preserve existing behavior)
 	if (GuildTithe_SavedDB.PrettyLDB == nil or GuildTithe_SavedDB.PrettyLDB == '') then
 		GuildTithe_SavedDB.PrettyLDB = false
+	end
+
+	if GuildTithe_SavedDB.DepositOnBankHide == nil then
+		GuildTithe_SavedDB.DepositOnBankHide = false
 	end
 end
 
@@ -315,6 +320,7 @@ end
 
 
 -- Handles depositing the tithe
+-- NB: deposit by mail won't work when mailbox replacement addons are active e.g. Tradeskillmaster
 function E:DepositTithe(clicked, isMail)
 	self:PrintDebug("DepositTithe(".. self:debugArgs(clicked, isMail) .. ") -- ACTUAL DEPOSIT IS DISABLED IN DEBUG MODE")
 	if not clicked and not GuildTithe_SavedDB.AutoDeposit then
@@ -338,7 +344,7 @@ function E:DepositTithe(clicked, isMail)
 	local tithe = GuildTithe_SavedDB.CurrentTithe
 	local bank = GetGuildBankMoney()
 
-	if bank + tithe > GOLD_CAP then
+	if not isMail and (bank + tithe > GOLD_CAP) then
 		tithe = GOLD_CAP - bank
 	end
 
@@ -348,7 +354,7 @@ function E:DepositTithe(clicked, isMail)
 		return
 	end
 
-	-- Deposit the money, then reset CurrentTithe and update TotalTithe
+	-- Deposit the money, then adjust CurrentTithe and update TotalTithe
 	if not E._DebugMode then
 		if isMail then
 			-- postal fix
@@ -359,13 +365,19 @@ function E:DepositTithe(clicked, isMail)
 			SendMailMoneySilver:SetText(silverAmount)
 			SendMailMoneyCopper:SetText(copperAmount)
 		else
-			DepositGuildBankMoney(tithe)
-		end
+		-- begin temporary test spam
+
+		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
+		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
+		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
+		DepositGuildBankMoney(tithe)
+		-- end temporary test spam
+	end
 	end
 
 	if GuildTithe_SavedDB.Spammy or E._DebugMode then
 		if tithe ~= GuildTithe_SavedDB.CurrentTithe then
-			self:PrintMessage(format(L.ChatDepositToGoldCap, C_CurrencyInfo.GetCoinTextureString(tithe), C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)))
+			self:PrintMessage(format(L.ChatDepositToGoldCap, C_CurrencyInfo.GetCoinTextureString(tithe), C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)), false, E._DebugMode)
 		else
 			self:PrintMessage(format(L.ChatDepositTitheAmount, C_CurrencyInfo.GetCoinTextureString(tithe), false, E._DebugMode))
 		end
@@ -374,6 +386,11 @@ function E:DepositTithe(clicked, isMail)
 	if not E._DebugMode then
 		GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + tithe
 		GuildTithe_SavedDB.CurrentTithe = GuildTithe_SavedDB.CurrentTithe - tithe
+		-- begin temporary test spam
+		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
+		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
+		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
+		-- end temporary test spam
 
 		if not GuildTithe_SavedDB.LDBDisplayTotal or not E.ShowTotalTimer then
 			GuildTithe_SavedDB.LDBDisplayTotal = true
@@ -382,7 +399,7 @@ function E:DepositTithe(clicked, isMail)
 	end
 end
 
-local numHelpLines = 12
+local numHelpLines = 15
 -- Print Help
 function E:PrintHelpMessages()
 	for i = 1, numHelpLines do
@@ -392,6 +409,10 @@ function E:PrintHelpMessages()
 			self:PrintMessage(L["ChatHelpLine" .. i])
 		end
 	end
+	self:PrintMessage("=== Status ===")
+	self:PrintMessage(format(L.ChatCommandToggleDebug, tostring(E._DebugMode)), false, E._DebugMode )
+	self:PrintMessage(format(L.ChatCommandToggleChat, tostring(GuildTithe_SavedDB.Spammy)))
+	self:PrintMessage(format(L.ChatCommandDepositOnBankHide ,tostring(GuildTithe_SavedDB.DepositOnBankHide)))
 end
 
 -- Handles slash commands
@@ -400,7 +421,13 @@ function E:OnChatCommand(msg)
 
 	-- toggle debug mode without opening the config window
 	if cmd == "debug" then
-		E._DebugMode = not E._DebugMode
+		if args == "on" or args == "true" then
+			E._DebugMode = true
+		elseif args == "off" or args == "false" then
+			E._DebugMode = false
+		else
+			E._DebugMode = not E._DebugMode
+		end
 		self:PrintMessage(format(L.ChatCommandToggleDebug, tostring(E._DebugMode)), false, E._DebugMode )
 		return
 	end
@@ -434,9 +461,9 @@ function E:OnChatCommand(msg)
 
 	-- Toggle pretty LDB display (requires more room on LDB bar than existing basic default)
 	elseif cmd == "prettyldb" then
-		if args == "on" then
+		if args == "on" or args == "true" then
 			GuildTithe_SavedDB.PrettyLDB = true
-		elseif args == "off" then
+		elseif args == "off" or args == "false" then
 			GuildTithe_SavedDB.PrettyLDB = false
 		else -- No args clause, toggle.
 			GuildTithe_SavedDB.PrettyLDB = not(GuildTithe_SavedDB.PrettyLDB)
@@ -490,6 +517,28 @@ function E:OnChatCommand(msg)
 			GuildTithe_SavedDB.CurrentTithe = newTithe
 			self:PrintMessage(format(L.ChatOutstandingTithe, C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)))
 		end
+
+	-- taggle chat output
+	elseif cmd == "chat" then
+		if args == "on" or args == "true" then
+			GuildTithe_SavedDB.Spammy = true
+		elseif args == "off" or args == "false" then
+			GuildTithe_SavedDB.Spammy = false
+		else -- No args clause, toggle.
+			GuildTithe_SavedDB.Spammy = not GuildTithe_SavedDB.Spammy
+		end
+		self:PrintMessage(format(L.ChatCommandToggleChat, tostring(GuildTithe_SavedDB.Spammy)))
+
+	-- deposit on bank window open or close (potential fix for server lag)
+	elseif cmd == "bankhide" then
+		if args == "on" or args == "true" then
+			GuildTithe_SavedDB.DepositOnBankHide = true
+		elseif args == "off" or args == "false" then
+			GuildTithe_SavedDB.DepositOnBankHide = false
+		else
+			GuildTithe_SavedDB.DepositOnBankHide = not GuildTithe_SavedDB.DepositOnBankHide
+		end
+		self:PrintMessage(format(L.ChatCommandDepositOnBankHide, tostring(GuildTithe_SavedDB.DepositOnBankHide)))
 
 	-- This is where we're going to actually print the help info... Later though.
 	else
@@ -594,9 +643,15 @@ function E.EventHandler(self, event, ...)
 			E.Loaded = true
 		end
 
-	-- GUILDBANKFRAME_OPENED: The GB was closed, deposit the outstanding tithe.
+	-- GUILDBANKFRAME_OPENED: The GB was opened, deposit the outstanding tithe.
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
+		if not GuildTithe_SavedDB.DepositOnBankHide then
+			E:DepositTithe()
+		end
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
-		E:DepositTithe()
+		if GuildTithe_SavedDB.DepositOnBankHide then
+			E:DepositTithe()
+		end
 		-- Mail_*: Update outstanding tithe from Mail sources
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.MailInfo then
 		return E:UpdateOutstandingTithe("Mail")
