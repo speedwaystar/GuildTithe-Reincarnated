@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 129
+	File: Core rev. 130
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -29,7 +29,7 @@ local addonName, _ = ...
 local E, L = unpack(select(2, ...))
 local GOLD_CAP = (9999999 * COPPER_PER_GOLD) + (99 * COPPER_PER_SILVER) + 99
 
---debugArgs: Returns literal "nil" or the tostring of all of the arguments passed to it.
+-- debugArgs: Returns literal "nil" or the tostring of all of the arguments passed to it.
 function E:debugArgs(...)
 	local tmp = {}
 	for i = 1, select("#", ...) do
@@ -167,14 +167,14 @@ function E:Init()
 	if not GuildTithe_SavedDB or GuildTithe_SavedDB.SettingsVer < SettingsDefaults.SettingsVer then
 		GuildTithe_SavedDB = SettingsDefaults
 	end
-	
+
 	-- Load the frames
 	GT_MiniTitheFrame:EnableMouse(not GuildTithe_SavedDB.MiniFrameLocked)
 	if GuildTithe_SavedDB.MiniFrameShown then
 		GT_MiniTitheFrame:Show()
 	end
 
-	--existing users won't have a setting for PrettyLDB. Fix that. (Defaults to off to preserve existing behavior)
+	-- existing users won't have a setting for PrettyLDB/when to deposit. Fix that. (Defaults to off to preserve existing behavior)
 	if (GuildTithe_SavedDB.PrettyLDB == nil or GuildTithe_SavedDB.PrettyLDB == '') then
 		GuildTithe_SavedDB.PrettyLDB = false
 	end
@@ -365,14 +365,18 @@ function E:DepositTithe(clicked, isMail)
 			SendMailMoneySilver:SetText(silverAmount)
 			SendMailMoneyCopper:SetText(copperAmount)
 		else
-		-- begin temporary test spam
+			-- begin temporary test spam
+			print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
+			print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
+			print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
+			-- end temporary test spam
 
-		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
-		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
-		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
-		DepositGuildBankMoney(tithe)
-		-- end temporary test spam
-	end
+			if not GuildTithe_SavedDB.DepositOnBankHide then
+				C_Timer.After(1, function() DepositGuildBankMoney(tithe) end)
+			else
+				DepositGuildBankMoney(tithe)
+			end
+		end
 	end
 
 	if GuildTithe_SavedDB.Spammy or E._DebugMode then
@@ -694,7 +698,8 @@ end
 
 -- Support addon compartment.
 local aboutText = "GuildTithe";
-local mouseButtonNote = "\nShow configuration window";
+local mouseButtonNote = "\nShow configuration window\n" ..
+						"/gt for command line options"
 AddonCompartmentFrame:RegisterAddon({
 	text = aboutText,
 	icon = "Interface\\ICONS\\inv_misc_coin_17.blp",
