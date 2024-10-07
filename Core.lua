@@ -366,9 +366,9 @@ function E:DepositTithe(clicked, isMail)
 			SendMailMoneyCopper:SetText(copperAmount)
 		else
 			-- begin temporary test spam
-			print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
-			print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
-			print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
+			-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
+			-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
+			-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
 			-- end temporary test spam
 
 			if not GuildTithe_SavedDB.DepositOnBankHide then
@@ -391,9 +391,9 @@ function E:DepositTithe(clicked, isMail)
 		GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + tithe
 		GuildTithe_SavedDB.CurrentTithe = GuildTithe_SavedDB.CurrentTithe - tithe
 		-- begin temporary test spam
-		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
-		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
-		print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
+		-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
+		-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
+		-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
 		-- end temporary test spam
 
 		if not GuildTithe_SavedDB.LDBDisplayTotal or not E.ShowTotalTimer then
