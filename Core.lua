@@ -114,9 +114,9 @@ local function GetLDBCoinString()
 
 	if GuildTithe_SavedDB.PrettyLDB then
 		if GuildTithe_SavedDB.LDBDisplayTotal then
-			return "Total: " .. C_CurrencyInfo.GetCoinTextureString(tt)
+			return "Total: " .. GetMoneyString(tt,true)
 		else
-			return "Tithe: " .. C_CurrencyInfo.GetCoinTextureString(ct)
+			return "Tithe: " .. GetMoneyString(ct, true)
 		end
 	else
 		return text
