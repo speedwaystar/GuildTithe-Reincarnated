@@ -312,9 +312,9 @@ function E:UpdateOutstandingTithe(source, update, ...)
 		end
 	else
 		self:PrintDebug("   " .. source .. " not collecting", true)
-		if GuildTithe_SavedDB.Spammy then
-			self:PrintMessage(format(L.ChatSpammyNotCollectingSource, source))
-		end
+		-- if GuildTithe_SavedDB.Spammy then
+		-- 	self:PrintMessage(format(L.ChatSpammyNotCollectingSource, source))
+		-- end
 	end
 end
 
