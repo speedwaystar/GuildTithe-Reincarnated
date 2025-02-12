@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 134
+	File: Core rev. 134a
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -40,7 +40,7 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	CURRENT_REVISION = 134
+	CURRENT_REVISION = 134a
 	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), CURRENT_REVISION
 
 	--[===[@debug@
@@ -667,6 +667,8 @@ function E.EventHandler(self, event, ...)
 		return E:UpdateOutstandingTithe("Merchant")
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.MailInfo then
 		return E:UpdateOutstandingTithe("Merchant", true)
+	elseif event == "MERCHANT_SHOW" then
+		return E:UpdateOutstandingTithe("Merchant")
 	elseif event == "MERCHANT_CLOSED" then
 		return E:UpdateOutstandingTithe("Merchant", true)
 
