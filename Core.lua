@@ -667,6 +667,8 @@ function E.EventHandler(self, event, ...)
 		return E:UpdateOutstandingTithe("Merchant")
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.MailInfo then
 		return E:UpdateOutstandingTithe("Merchant", true)
+	elseif event == "MERCHANT_CLOSED" then
+		return E:UpdateOutstandingTithe("Merchant", true)
 
 	-- TRADE_*: Update trade amounts;
 	elseif event == "TRADE_SHOW" then
