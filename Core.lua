@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 145
+	File: Core rev. 146
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -29,16 +29,43 @@ local addonName, _ = ...
 local E, L = unpack(select(2, ...))
 local GOLD_CAP = (9999999 * COPPER_PER_GOLD) + (99 * COPPER_PER_SILVER) + 99
 
+-- If a restriction is active, return type.
+-- If none are active, return -1.
+-- 'mode' argument is for printing info in debug displays and doesn't change
+-- how the function works. Any string can be passed in there.
+
+local lastAnnounceTime = GetTime()
+
+function SecretsActive(mode)
+	local now = GetTime()
+	local printedRestrictions = false
+	local j = -1
+
+	for i=0,4,1 do
+		if C_RestrictedActions.IsAddOnRestrictionActive(i) and mode ~= "Debug" then
+			j = i
+			print(mode .. ": Found AddOn restriction type " .. j .. ".")
+		end
+	end
+
+	if j == -1 and mode ~= "Debug" then
+		print(mode .. ": No AddOn restrictions found.")
+		lastAnnounceTime = GetTime()
+	end
+	
+	printedRestrictions = true
+	return j
+end
+
 -- debugArgs: Returns literal "nil" or the tostring of all of the arguments passed to it.
 function E:debugArgs(...)
 	local tmp = {}
-	if not InCombatLockdown() and not IsInInstance() and canaccessvalue(tmp) and not issecrettable(tmp) then
+	if SecretsActive("debugArgs") <= 0 then
 		for i = 1, select("#", ...) do
-			if not issecretvalue(tmp[i]) then
-				tmp[i] = tostring(select(i, ...)) or "nil"
-			end
+			tmp[i] = tostring(select(i, ...)) or "nil"
 		end
 		return table.concat(tmp, ", ") or "nil"
+
 	else
 		self:PrintDebug("A secret error caused an issue with debug messaging.")
 		return "nil"
@@ -47,7 +74,7 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	CURRENT_REVISION = 145
+	CURRENT_REVISION = 146
 	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), CURRENT_REVISION
 
 	--[===[@debug@
@@ -66,15 +93,6 @@ function E:GetVerString()
 		end
 	end
 	return v .. "." .. rev
-end
-
-function SecretsActive()
-	for i=0,4,1 do
-		if C_RestrictedActions.IsAddOnRestrictionActive(i) then
-			return true
-		end
-	end
-	return false
 end
 
 local SettingsDefaults = {
@@ -257,8 +275,7 @@ function E:UpdateOutstandingTithe(source, update, ...)
 	local GOLD = strmatch(format(GOLD_AMOUNT, 20), "%d+%s(.+)") -- This will return what's in the brackets, which on enUS would be "Gold"
 	local SILVER = strmatch(format(SILVER_AMOUNT, 20), "%d+%s(.+)")
 	local COPPER = strmatch(format(COPPER_AMOUNT, 20), "%d+%s(.+)")
-	---self:PrintDebug(self:debugArgs(GOLD, SILVER, COPPER))
-
+	self:PrintDebug(self:debugArgs(GOLD, SILVER, COPPER))
 
 	-- Make some storage for the tithe amount
 	local titheAmount
@@ -269,14 +286,14 @@ function E:UpdateOutstandingTithe(source, update, ...)
 		local arg1 = ...
 		--Try and parse the current amount from the string.
 		local g, s, c
-		if not SecretsActive() then
+		if canaccessvalue (arg1) then
 			g = tonumber(arg1:match("(%d+)%s" .. GOLD)) or 0
 			s = tonumber(arg1:match("(%d+)%s" .. SILVER)) or 0
 		    c = tonumber(arg1:match("(%d+)%s" .. COPPER)) or 0
 		else
 			g = 0 --Unfortunately, in combat lockdown we have to be wary of taint.
 			s = 0 --This should only affect attempts to loot during boss encounters.
-			c = 0
+			c = 0 --Alas, exceptions aren't up to addons. We deposit when we can.
 		end
 
 		titheAmount = (g * COPPER_PER_GOLD) + (s * SILVER_PER_GOLD) + c
@@ -340,7 +357,6 @@ function E:UpdateOutstandingTithe(source, update, ...)
 		-- end
 	end
 end
-
 
 -- Handles depositing the tithe
 -- NB: deposit by mail won't work when mailbox replacement addons are active e.g. Tradeskillmaster
