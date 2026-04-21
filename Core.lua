@@ -48,7 +48,7 @@ function SecretsActive(mode)
 		end
 	end
 
-	if j == -1 and mode ~= "Debug" then
+	if j == -1 and mode ~= "Debug"  and mode ~= "debugArgs" then
 		print(mode .. ": No AddOn restrictions found.")
 		lastAnnounceTime = GetTime()
 	end
@@ -413,7 +413,7 @@ function E:DepositTithe(clicked, isMail)
 			if not GuildTithe_SavedDB.DepositOnBankHide then
 				C_Timer.After(1, function() DepositGuildBankMoney(tithe) end)
 			else
-				DepositGuildBankMoney(tithe)
+				C_Bank.DepositMoney(1, tithe)
 			end
 		end
 	end
