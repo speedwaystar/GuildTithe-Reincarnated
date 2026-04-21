@@ -28,6 +28,7 @@
 local addonName, _ = ...
 local E, L = unpack(select(2, ...))
 local GOLD_CAP = (9999999 * COPPER_PER_GOLD) + (99 * COPPER_PER_SILVER) + 99
+local WARBAND_GOLD_CAP = GOLD_CAP * 10
 
 -- If a restriction is active, return type.
 -- If none are active, return -1.
@@ -382,9 +383,19 @@ function E:DepositTithe(clicked, isMail)
 	-- auto prorate tithe when bank will exceed GOLD_CAP
 	local tithe = GuildTithe_SavedDB.CurrentTithe
 	local bank = GetGuildBankMoney()
+	local warband = C_Bank.FetchDepositedMoney(Enum.BankType.Account)
 
-	if not isMail and (bank + tithe > GOLD_CAP) then
-		tithe = GOLD_CAP - bank
+	if C_Bank.AreAnyBankTypesViewable() then
+		if C_Bank.FetchViewableBankTypes() == 1 then
+			if not isMail and (bank + tithe > GOLD_CAP) then
+				tithe = GOLD_CAP - bank
+			end
+		end
+		if C_Bank.FetchViewableBankTypes() == 2 then
+			if not isMail and (warband + tithe > WARBAND_GOLD_CAP) then
+				tithe = WARBAND_GOLD_CAP - bank
+			end
+		end
 	end
 
 	-- Make sure the player has enough money first, then spam them out if they don't!
@@ -410,10 +421,16 @@ function E:DepositTithe(clicked, isMail)
 			-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
 			-- end temporary test spam
 
-			if not GuildTithe_SavedDB.DepositOnBankHide then
-				C_Timer.After(1, function() DepositGuildBankMoney(tithe) end)
-			else
-				C_Bank.DepositMoney(1, tithe)
+			if C_Bank.AreAnyBankTypesViewable() then
+				if not GuildTithe_SavedDB.DepositOnBankHide then
+					C_Timer.After(1, function()
+							if C_Bank.FetchViewableBankTypes() == Enum.BankType.Guild then C_Bank.DepositMoney(Enum.BankType.Guild, tithe) end
+							if C_Bank.FetchViewableBankTypes() == Enum.BankType.Account then C_Bank.DepositMoney(Enum.BankType.Account, tithe) end
+						end)
+				else
+					if C_Bank.FetchViewableBankTypes() == Enum.BankType.Guild then C_Bank.DepositMoney(Enum.BankType.Guild, tithe) end
+					if C_Bank.FetchViewableBankTypes() == Enum.BankType.Account then C_Bank.DepositMoney(Enum.BankType.Account, tithe) end
+				end
 			end
 		end
 	end
@@ -691,7 +708,19 @@ function E.EventHandler(self, event, ...)
 		if not GuildTithe_SavedDB.DepositOnBankHide then
 			E:DepositTithe()
 		end
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.AccountBanker then
+		if not GuildTithe_SavedDB.DepositOnBankHide then
+			E:DepositTithe()
+		end
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.AccountBanker then
+		if not GuildTithe_SavedDB.DepositOnBankHide then
+			E:DepositTithe()
+		end
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
+		if GuildTithe_SavedDB.DepositOnBankHide then
+			E:DepositTithe()
+		end
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.AccountBanker then
 		if GuildTithe_SavedDB.DepositOnBankHide then
 			E:DepositTithe()
 		end
