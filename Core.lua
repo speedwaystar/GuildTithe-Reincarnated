@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 146
+	File: Core rev. 147
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -28,7 +28,7 @@
 local addonName, _ = ...
 local E, L = unpack(select(2, ...))
 local GOLD_CAP = (9999999 * COPPER_PER_GOLD) + (99 * COPPER_PER_SILVER) + 99
-local WARBAND_GOLD_CAP = GOLD_CAP * 10
+local WARBAND_GOLD_CAP = GOLD_CAP * 10 -- in enUS, anyway
 
 -- If a restriction is active, return type.
 -- If none are active, return -1.
@@ -37,36 +37,38 @@ local WARBAND_GOLD_CAP = GOLD_CAP * 10
 
 local lastAnnounceTime = GetTime()
 
-function SecretsActive(mode)
-	local now = GetTime()
-	local printedRestrictions = false
+function SecretsActive()
 	local j = -1
-
 	for i=0,4,1 do
-		if C_RestrictedActions.IsAddOnRestrictionActive(i) and mode ~= "Debug" then
+		if C_RestrictedActions.IsAddOnRestrictionActive(i) then
 			j = i
-			print(mode .. ": Found AddOn restriction type " .. j .. ".")
 		end
 	end
-
-	if j == -1 and mode ~= "Debug"  and mode ~= "debugArgs" then
-		print(mode .. ": No AddOn restrictions found.")
-		lastAnnounceTime = GetTime()
-	end
 	
-	printedRestrictions = true
 	return j
+end
+
+function IsWarbandBankOpen()
+    local types = C_Bank.FetchViewableBankTypes()
+    if not types then return false end
+
+    for _, bankType in ipairs(types) do
+        if bankType == Enum.BankType.Account then
+            return true
+        end
+    end
+
+    return false
 end
 
 -- debugArgs: Returns literal "nil" or the tostring of all of the arguments passed to it.
 function E:debugArgs(...)
 	local tmp = {}
-	if SecretsActive("debugArgs") <= 0 then
+	if SecretsActive() <= 0 then
 		for i = 1, select("#", ...) do
 			tmp[i] = tostring(select(i, ...)) or "nil"
 		end
 		return table.concat(tmp, ", ") or "nil"
-
 	else
 		self:PrintDebug("A secret error caused an issue with debug messaging.")
 		return "nil"
@@ -75,7 +77,7 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	CURRENT_REVISION = 146
+	CURRENT_REVISION = 147
 	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), CURRENT_REVISION
 
 	--[===[@debug@
@@ -239,7 +241,7 @@ function E:ResetConfig()
 end
 
 -- This is used to check the special tithe amounts for merchant/mail/trade.
--- They all need the same function, but have slightly different methods. THis way is faster.
+-- They all need the same function, but have slightly different methods. This way is faster.
 local function CheckSpecialTitheAmounts(source, startGold, finishGold)
 
 	local titheAmount
@@ -379,22 +381,18 @@ function E:DepositTithe(clicked, isMail)
 		return
 	end
 
-
 	-- auto prorate tithe when bank will exceed GOLD_CAP
 	local tithe = GuildTithe_SavedDB.CurrentTithe
 	local bank = GetGuildBankMoney()
 	local warband = C_Bank.FetchDepositedMoney(Enum.BankType.Account)
 
-	if C_Bank.AreAnyBankTypesViewable() then
-		if C_Bank.FetchViewableBankTypes() == 1 then
-			if not isMail and (bank + tithe > GOLD_CAP) then
-				tithe = GOLD_CAP - bank
-			end
+	if not IsWarbandBankOpen() then
+		if not isMail and (bank + tithe > GOLD_CAP) then
+			tithe = GOLD_CAP - bank
 		end
-		if C_Bank.FetchViewableBankTypes() == 2 then
-			if not isMail and (warband + tithe > WARBAND_GOLD_CAP) then
-				tithe = WARBAND_GOLD_CAP - bank
-			end
+	else
+		if not isMail and (warband + tithe > WARBAND_GOLD_CAP) then
+			tithe = WARBAND_GOLD_CAP - warband
 		end
 	end
 
@@ -411,25 +409,28 @@ function E:DepositTithe(clicked, isMail)
 			local goldAmount = floor(GuildTithe_SavedDB.CurrentTithe / COPPER_PER_GOLD)
 			local silverAmount = floor((GuildTithe_SavedDB.CurrentTithe % COPPER_PER_GOLD) / COPPER_PER_SILVER)
 			local copperAmount = floor(GuildTithe_SavedDB.CurrentTithe % COPPER_PER_SILVER)
+
 			SendMailMoneyGold:SetText(goldAmount)
 			SendMailMoneySilver:SetText(silverAmount)
 			SendMailMoneyCopper:SetText(copperAmount)
 		else
-			-- begin temporary test spam
-			-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
-			-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
-			-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance before deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
-			-- end temporary test spam
+			tithe = tonumber(tithe)
 
-			if C_Bank.AreAnyBankTypesViewable() then
-				if not GuildTithe_SavedDB.DepositOnBankHide then
-					C_Timer.After(1, function()
-							if C_Bank.FetchViewableBankTypes() == Enum.BankType.Guild then C_Bank.DepositMoney(Enum.BankType.Guild, tithe) end
-							if C_Bank.FetchViewableBankTypes() == Enum.BankType.Account then C_Bank.DepositMoney(Enum.BankType.Account, tithe) end
-						end)
+			if not GuildTithe_SavedDB.DepositOnBankHide then
+				C_Timer.After(2, function()
+						if IsWarbandBankOpen() then
+							C_Bank.DepositMoney(Enum.BankType.Account, tithe)
+						else
+							--C_Bank.DepositMoney(Enum.BankType.Guild, tithe) --Doesn't seem to work right now for guild bank
+							DepositGuildBankMoney(tithe)
+						end
+					end)
+			else
+				if IsWarbandBankOpen() then
+					C_Bank.DepositMoney(Enum.BankType.Account, tithe)
 				else
-					if C_Bank.FetchViewableBankTypes() == Enum.BankType.Guild then C_Bank.DepositMoney(Enum.BankType.Guild, tithe) end
-					if C_Bank.FetchViewableBankTypes() == Enum.BankType.Account then C_Bank.DepositMoney(Enum.BankType.Account, tithe) end
+					--C_Bank.DepositMoney(Enum.BankType.Guild, tithe)
+					DepositGuildBankMoney(tithe)
 				end
 			end
 		end
@@ -446,11 +447,6 @@ function E:DepositTithe(clicked, isMail)
 	if not E._DebugMode then
 		GuildTithe_SavedDB.TotalTithe = GuildTithe_SavedDB.TotalTithe + tithe
 		GuildTithe_SavedDB.CurrentTithe = GuildTithe_SavedDB.CurrentTithe - tithe
-		-- begin temporary test spam
-		-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Tithe after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe))))
-		-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Guild bank after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetGuildBankMoney()))))
-		-- print(LIGHTGRAY_FONT_COLOR:WrapTextInColorCode(format("Own balance after deposit: %s.",C_CurrencyInfo.GetCoinTextureString(GetMoney()))))
-		-- end temporary test spam
 
 		if not GuildTithe_SavedDB.LDBDisplayTotal or not E.ShowTotalTimer then
 			GuildTithe_SavedDB.LDBDisplayTotal = true
@@ -619,6 +615,7 @@ function GuildTithe_OnLoad(self)
 	self:RegisterEvent("TRADE_CLOSED") -- Trade closed
 	self:RegisterEvent("TRADE_MONEY_CHANGED") -- Player's money was updated (used after a trade)
 	self:RegisterEvent("TRADE_REQUEST_CANCEL") -- Cancelled trade.
+
 	self:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
 	self:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
 
@@ -708,11 +705,11 @@ function E.EventHandler(self, event, ...)
 		if not GuildTithe_SavedDB.DepositOnBankHide then
 			E:DepositTithe()
 		end
-	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.AccountBanker then
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.Banker then
 		if not GuildTithe_SavedDB.DepositOnBankHide then
 			E:DepositTithe()
 		end
-	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.AccountBanker then
+		elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.AccountBanker then
 		if not GuildTithe_SavedDB.DepositOnBankHide then
 			E:DepositTithe()
 		end
@@ -720,7 +717,7 @@ function E.EventHandler(self, event, ...)
 		if GuildTithe_SavedDB.DepositOnBankHide then
 			E:DepositTithe()
 		end
-	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.AccountBanker then
+	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.Banker then
 		if GuildTithe_SavedDB.DepositOnBankHide then
 			E:DepositTithe()
 		end
