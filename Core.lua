@@ -24,11 +24,17 @@
 ------------------------------------------------------------------------
 ]]
 
+
+
 -- Import engine and the localization table.
 local addonName, _ = ...
 local E, L = unpack(select(2, ...))
 local GOLD_CAP = (9999999 * COPPER_PER_GOLD) + (99 * COPPER_PER_SILVER) + 99
 local WARBAND_GOLD_CAP = GOLD_CAP * 10 -- in enUS, anyway
+
+-- Global variables to communicate with GUI
+GuildTitheReincarnated = {}
+--E.Info = {} --database
 
 -- If a restriction is active, return type.
 -- If none are active, return -1.
@@ -46,6 +52,12 @@ function SecretsActive()
 	end
 	
 	return j
+end
+
+-- Simple round function for GUI handling (Lua doesn't have a round function)
+function round(num, numDecimalPlaces)
+  local mult = 10^(numDecimalPlaces or 0)
+  return math.floor(num * mult + 0.5) / mult
 end
 
 function IsWarbandBankOpen()
@@ -79,12 +91,7 @@ end
 function E:GetVerString()
 	CURRENT_REVISION = 147
 	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), CURRENT_REVISION
-
-	--[===[@debug@
-	-- If this code is run, it's an unpackaged version, show this:
-	if v == "release_v2.6.0" then v = "DEV_VERSION"; end
-	--@end-debug@]===]
-
+	
 	if short then
 		-- Try to discern what release stage:
 		if strfind(v, "release") then
@@ -97,6 +104,8 @@ function E:GetVerString()
 	end
 	return v .. "." .. rev
 end
+
+GuildTitheReincarnated.version = E:GetVerString()
 
 local SettingsDefaults = {
 	SettingsVer = 2,
@@ -117,6 +126,12 @@ local SettingsDefaults = {
 	LDBDisplayTotal = false,
 	PrettyLDB = false,
 	DepositOnBankHide = false,
+	DepositToGuild = true,
+	DepositToAccount = false,
+	GUISizeX = 500,
+	GUISizeY = 700,
+	GUIAnchorX = 500,
+	GUIAnchorY = 500,
 }
 
 -- Get the coin string for the databroker icon, because it needs to be shorter.
@@ -193,7 +208,7 @@ function E:Init()
 				else
 					tooltip:AddLine(L.TooltipLDBDescriptionCurrent, 0.8, 0.8, 0.8, 1)
 				end
-				tooltip:AddLine("\nHint: Left-Click with the guild bank or a letter open to deposit your tithe! Right-Click to toggle between total and current tithes.", 0, 1, 0, 1)
+				tooltip:AddLine("\nHint: Left-Click with the guild/warband bank or a letter open to deposit your tithe! Right-Click to toggle between total and current tithes.", 0, 1, 0, 1)
 				tooltip:Show()
 			end
 		end,
@@ -219,6 +234,21 @@ function E:Init()
 	if GuildTithe_SavedDB.DepositOnBankHide == nil then
 		GuildTithe_SavedDB.DepositOnBankHide = false
 	end
+
+	-- Handle it when the user hasn't yet had a version that can handle account deposit.
+	-- Match the defaults that are set for new users or when settings are reset.
+	if (GuildTithe_SavedDB.DepositToGuild == nil) and (GuildTithe_SavedDB.DepositToAccount == nil) then
+		GuildTithe_SavedDB.DepositToGuild = true
+		GuildTithe_SavedDB.DepositToAccount = false
+	end
+end
+
+function GuildTitheReincarnated:HandleSliderChange(source, newvalue)
+	GuildTithe_SavedDB.CollectSource[source] = round(newvalue,0)
+end
+
+function GuildTitheReincarnated:HandleCheckboxChange(source,newvalue)
+	print("Checkbox " .. source .. " now set to " .. newvalue)
 end
 
 function E:ResetWindowSettings()

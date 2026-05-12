@@ -6,4 +6,5 @@
 	<Script file="libs\LibVan32-1.0\LibVan32.lua" />
 	<Script file="libs\CallbackHandler-1.0\CallbackHandler-1.0.lua" />
 	<Script file="libs\LibDataBroker-1.1\LibDataBroker-1.1.lua" />
+	<Script file="libs\AceGUI-3.0\AceGUI-3.0.lua" />
 </Ui>
