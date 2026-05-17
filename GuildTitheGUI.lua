@@ -12,7 +12,11 @@ function GuildTitheReincarnated.DrawMainUIFrame()
             end)
         GuildTitheReincarnated.GTSettingsFrame:SetTitle("GuildTithe Options")
         GuildTitheReincarnated.GTSettingsFrame:SetWidth(650)
-        GuildTitheReincarnated.GTSettingsFrame:SetHeight(730)
+        if IsInGuild() then
+            GuildTitheReincarnated.GTSettingsFrame:SetHeight(730)
+        else
+            GuildTitheReincarnated.GTSettingsFrame:SetHeight(800) --increased height to display no-guild warning
+        end
         GuildTitheReincarnated.GTSettingsFrame:SetStatusText(GuildTitheReincarnated.version)
         GuildTitheReincarnated.GTSettingsFrame:SetLayout("Flow")
 

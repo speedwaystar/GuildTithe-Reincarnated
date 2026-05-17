@@ -80,24 +80,6 @@ function GuildTitheReincarnated.ToggleMinimapIcon()
 	end
 end
 
---[[ function GuildTitheReincarnated.PrettyPrintAmount(amount)
-	local text = ""
-
-	local gold   = floor(amount / COPPER_PER_GOLD)
-	local silver = floor(amount / SILVER_PER_GOLD) % COPPER_PER_SILVER
-	local copper = floor(amount % COPPER_PER_SILVER)
-
-	if gold ~= 0 then
-		text = format("%s|cffffd700g|r %s|cffc7c7cfs|r %s|cffeda55fc|r", gold, silver, copper)
-	elseif silver ~= 0 then
-		text = format("%s|cffc7c7cfs|r %s|cffeda55fc|r", silver, copper)
-	else
-		text = format("%s|cffeda55fc|r", copper)
-	end
-
-	return text
-end ]]
-
 function DrawTooltip(tooltip)
 	if tooltip and tooltip.AddLine then tooltip:SetText("GuildTithe") end
 	if GuildTithe_SavedDB.LDBDisplayTotal then
