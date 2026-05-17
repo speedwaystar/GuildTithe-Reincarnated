@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 147
+	File: Core rev. 146
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -23,8 +23,6 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ------------------------------------------------------------------------
 ]]
-
-
 
 -- Import engine and the localization table.
 local addonName, _ = ...
@@ -55,7 +53,7 @@ function SecretsActive()
 end
 
 -- Simple round function for GUI handling (Lua doesn't have a round function)
-function round(num, numDecimalPlaces)
+function GuildTitheReincarnated.round(num, numDecimalPlaces)
   local mult = 10^(numDecimalPlaces or 0)
   return math.floor(num * mult + 0.5) / mult
 end
@@ -71,6 +69,45 @@ function IsWarbandBankOpen()
     end
 
     return false
+end
+
+function GuildTitheReincarnated.ToggleMinimapIcon()
+	GuildTithe_SavedDB.HideMinimapIcon = not GuildTithe_SavedDB.HideMinimapIcon
+	if GuildTithe_SavedDB.HideMinimapIcon then
+		LDBIcon:Hide("GuildTitheMinimapButton")
+	else
+		LDBIcon:Show("GuildTitheMinimapButton")
+	end
+end
+
+--[[ function GuildTitheReincarnated.PrettyPrintAmount(amount)
+	local text = ""
+
+	local gold   = floor(amount / COPPER_PER_GOLD)
+	local silver = floor(amount / SILVER_PER_GOLD) % COPPER_PER_SILVER
+	local copper = floor(amount % COPPER_PER_SILVER)
+
+	if gold ~= 0 then
+		text = format("%s|cffffd700g|r %s|cffc7c7cfs|r %s|cffeda55fc|r", gold, silver, copper)
+	elseif silver ~= 0 then
+		text = format("%s|cffc7c7cfs|r %s|cffeda55fc|r", silver, copper)
+	else
+		text = format("%s|cffeda55fc|r", copper)
+	end
+
+	return text
+end ]]
+
+function DrawTooltip(tooltip)
+	if tooltip and tooltip.AddLine then tooltip:SetText("GuildTithe") end
+	if GuildTithe_SavedDB.LDBDisplayTotal then
+		tooltip:AddLine(L["TooltipLDBDescriptionTotal"], 0.8, 0.8, 0.8, 1)
+	else
+		tooltip:AddLine(L["TooltipLDBDescriptionCurrent"], 0.8, 0.8, 0.8, 1)
+	end
+	tooltip:AddLine("\n" .. GuildTitheReincarnated.GetLDBCoinString(), 1, 1, 1, 1)
+	tooltip:AddLine("\n" .. L["TooltipLDBDescriptionInstructions"], 0.8, 0.8, 0.8, 1)
+	tooltip:Show()
 end
 
 -- debugArgs: Returns literal "nil" or the tostring of all of the arguments passed to it.
@@ -89,7 +126,7 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	CURRENT_REVISION = 147
+	CURRENT_REVISION = 146
 	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), CURRENT_REVISION
 	
 	if short then
@@ -116,26 +153,40 @@ local SettingsDefaults = {
 		Loot = -1,
 		Trade = -1
 	},
+	CollectFrom = {
+		Quest = false,
+		Merchant = false,
+		Mail = false,
+		Loot = false,
+		Trade = false
+	},
 	AutoDeposit = true,
+	TimeOfLastDeposit = -1,
+	TypeOfLastDeposit = "Unknown",
+	AmountOfLastDeposit = -1,
 	Spammy = false,
 	TotalTithe = 0,
 	CurrentTithe = 0,
 	MiniFrameShown = true,
 	MiniFrameLocked = false,
-	SkinElvUI = true,
+	GUIIsShown = false,
+	--SkinElvUI = true,
 	LDBDisplayTotal = false,
 	PrettyLDB = false,
 	DepositOnBankHide = false,
 	DepositToGuild = true,
 	DepositToAccount = false,
-	GUISizeX = 500,
-	GUISizeY = 700,
-	GUIAnchorX = 500,
-	GUIAnchorY = 500,
+	MinimapButtonInfo = {
+		["minimapPos"] = 100,
+		["hide"] = false,
+	},
 }
 
+-- Storage for current/total tithe amounts for display in GUI
+GuildTitheReincarnated.CurrentTithe, GuildTitheReincarnated.TotalTithe = 0
+
 -- Get the coin string for the databroker icon, because it needs to be shorter.
-local function GetLDBCoinString()
+function GuildTitheReincarnated.GetLDBCoinString()
 	local text = ""
 	local ct = GuildTithe_SavedDB.CurrentTithe
 	local tt = GuildTithe_SavedDB.TotalTithe
@@ -164,6 +215,9 @@ local function GetLDBCoinString()
 		end
 	end
 
+	GuildTitheReincarnated.CurrentTithe = GetMoneyString(ct,true)
+	GuildTitheReincarnated.TotalTithe = GetMoneyString(tt,true)
+
 	if GuildTithe_SavedDB.PrettyLDB then
 		if GuildTithe_SavedDB.LDBDisplayTotal then
 			return "Total: " .. GetMoneyString(tt,true)
@@ -172,7 +226,7 @@ local function GetLDBCoinString()
 		end
 	else
 		return text
-	end
+	end	
 end
 
 function E:Init()
@@ -180,39 +234,41 @@ function E:Init()
 	E._DebugMode = true
 	--@end-alpha@]===]
 
-	E.Info = {}
+	-- When we first load, the GUI isn't displaying
+	GuildTithe_SavedDB.GUIIsShown = false
 
-	-- Set up the LDB datastream
+	E.Info = {}
+	--local MinimapIcon = LibStub("LibDBIcon-1.0")
+	
 	local t = {
 		type = "data source",
-		text = "",
+		text = "GuildTithe",
 		icon = "Interface\\ICONS\\inv_misc_coin_17.blp",
 		label = "Tithe",
 		OnClick = function(frame, button)
 			GameTooltip:Hide()
 			if button == "LeftButton" then
-				E.FrameScript_MiniTitheFrameOnClick()
+				GuildTitheReincarnated.DrawMainUIFrame()
 			elseif button == "RightButton" then
-				if not GuildTithe_SavedDB.LDBDisplayTotal then
-					GuildTithe_SavedDB.LDBDisplayTotal = true
-				else
-					GuildTithe_SavedDB.LDBDisplayTotal = false
-				end
+				GuildTithe_SavedDB.LDBDisplayTotal = not GuildTithe_SavedDB.LDBDisplayTotal
 			end
 		end,
 		OnTooltipShow = function(tooltip)
 			if tooltip and tooltip.AddLine then
 				tooltip:SetText("GuildTithe")
 				if GuildTithe_SavedDB.LDBDisplayTotal then
-					tooltip:AddLine(L.TooltipLDBDescriptionTotal, 0.8, 0.8, 0.8, 1)
+					tooltip:AddLine(L["TooltipLDBDescriptionTotal"], 0.8, 0.8, 0.8, 1)
 				else
-					tooltip:AddLine(L.TooltipLDBDescriptionCurrent, 0.8, 0.8, 0.8, 1)
+					tooltip:AddLine(L["TooltipLDBDescriptionCurrent"], 0.8, 0.8, 0.8, 1)
 				end
-				tooltip:AddLine("\nHint: Left-Click with the guild/warband bank or a letter open to deposit your tithe! Right-Click to toggle between total and current tithes.", 0, 1, 0, 1)
+				tooltip:AddLine("\n" .. GuildTitheReincarnated.GetLDBCoinString(), 1, 1, 1, 1)
+
+				tooltip:AddLine("\n" .. L["TooltipLDBDescriptionInstructions"], 1, 1, 1, 1)
 				tooltip:Show()
 			end
 		end,
 	}
+
 	E.Info.LDBData = LibStub:GetLibrary("LibDataBroker-1.1"):NewDataObject("GuildTithe", t)
 
 	-- Check the settings:
@@ -220,11 +276,8 @@ function E:Init()
 		GuildTithe_SavedDB = SettingsDefaults
 	end
 
-	-- Load the frames
-	GT_MiniTitheFrame:EnableMouse(not GuildTithe_SavedDB.MiniFrameLocked)
-	if GuildTithe_SavedDB.MiniFrameShown then
-		GT_MiniTitheFrame:Show()
-	end
+	-- Initialise GUI display track for new GUI
+	if GuildTithe_SavedDB.GUIIsShown == nil then GuildTithe_SavedDB.GUIIsShown = false end
 
 	-- existing users won't have a setting for PrettyLDB/when to deposit. Fix that. (Defaults to off to preserve existing behavior)
 	if (GuildTithe_SavedDB.PrettyLDB == nil or GuildTithe_SavedDB.PrettyLDB == '') then
@@ -241,20 +294,80 @@ function E:Init()
 		GuildTithe_SavedDB.DepositToGuild = true
 		GuildTithe_SavedDB.DepositToAccount = false
 	end
+
+	-- Set up new collect-from checkbox state storage for existing users. The new GUI
+	-- uses a slightly different setup to enable categories, but ties into existing code.
+	if GuildTithe_SavedDB.CollectFrom == nil then
+		GuildTithe_SavedDB.CollectFrom = {"Quest","Merchant","Mail","Loot","Trade"}
+		for i,v in pairs(GuildTithe_SavedDB.CollectSource) do
+			if v >= 1 then
+				GuildTithe_SavedDB.CollectFrom[i] = true
+			else
+				GuildTithe_SavedDB.CollectFrom[i] = false
+			end
+		end
+	end
+
+	-- Set up tithe date/time tracking for new installs/updates
+	if GuildTithe_SavedDB.TimeOfLastDeposit == nil then GuildTithe_SavedDB.TimeOfLastDeposit = -1 end
+	if GuildTithe_SavedDB.TypeOfLastDeposit == nil then GuildTithe_SavedDB.TypeOfLastDeposit = "Unknown" end
+	if GuildTithe_SavedDB.AmountOfLastDeposit == nil then GuildTithe_SavedDB.AmountOfLastDeposit = -1 end
+
+	-- print all keys of table `t'
+	print("debug")
+    for k in pairs(GuildTithe_SavedDB.CollectFrom) do print(k) end
+
+	-- Initialise minimap button.
+	if GuildTithe_SavedDB.MinimapButtonInfo == nil then
+		GuildTithe_SavedDB.MinimapButtonInfo = {
+			minimapPos = 100,
+			hide = false
+		}
+	end
+
+	LDB = LibStub("LibDataBroker-1.1", true)
+	LDBIcon = LDB and LibStub("LibDBIcon-1.0", true)
+	if LDB then
+	local GTIcon = LDB:NewDataObject("GuildTitheMinimapButton", {
+	type = "launcher",
+		text = "GuildTithe",
+		icon = "Interface\\ICONS\\inv_misc_coin_17.blp",
+		OnClick = function(_, button)
+				if button == "LeftButton" then
+					if GuildTithe_SavedDB.GUIIsShown then
+						GuildTithe_SavedDB.GUIIsShown = false
+                		AceGUI:Release(GuildTitheReincarnated.GTSettingsFrame)
+					else
+						GuildTitheReincarnated.DrawMainUIFrame()
+					end
+				end
+			end,
+			OnTooltipShow = function(tooltip)
+				DrawTooltip(tooltip)
+			end,
+		})
+		if LDBIcon then
+			LDBIcon:Register("GuildTitheMinimapButton", GTIcon, GuildTithe_SavedDB.MinimapButtonInfo)
+		end
+	end
 end
 
 function GuildTitheReincarnated:HandleSliderChange(source, newvalue)
-	GuildTithe_SavedDB.CollectSource[source] = round(newvalue,0)
+	GuildTithe_SavedDB.CollectSource[source] = (GuildTitheReincarnated.round(newvalue,0))
 end
 
 function GuildTitheReincarnated:HandleCheckboxChange(source,newvalue)
-	print("Checkbox " .. source .. " now set to " .. newvalue)
+	if newvalue then
+		GuildTithe_SavedDB.CollectFrom[source] = true
+	end
+	if not newvalue then
+		GuildTithe_SavedDB.CollectFrom[source] = false
+	end
 end
 
-function E:ResetWindowSettings()
-	GT_OptionsFrame:SetUserPlaced(false)
-	GT_MiniTitheFrame:SetUserPlaced(false)
-	ReloadUI()
+function GuildTitheReincarnated:HandleDepositChange(source,newvalue)
+	if source == "Guild" then GuildTithe_SavedDB.DepositToGuild = newvalue end
+	if source == "Account" then GuildTithe_SavedDB.DepositToAccount = newvalue end
 end
 
 function E:ResetCurrentTithe()
@@ -264,10 +377,6 @@ end
 -- Reset default settings
 function E:ResetConfig()
 	GuildTithe_SavedDB = SettingsDefaults
-	if GT_OptionsFrame:IsShown() then
-		self.UpdateOptions(GT_OptionsFrame)
-	end
-	return self:ResetWindowSettings()
 end
 
 -- This is used to check the special tithe amounts for merchant/mail/trade.
@@ -385,9 +494,6 @@ function E:UpdateOutstandingTithe(source, update, ...)
 		end
 	else
 		self:PrintDebug("   " .. source .. " not collecting", true)
-		-- if GuildTithe_SavedDB.Spammy then
-		-- 	self:PrintMessage(format(L.ChatSpammyNotCollectingSource, source))
-		-- end
 	end
 end
 
@@ -445,14 +551,17 @@ function E:DepositTithe(clicked, isMail)
 			SendMailMoneyCopper:SetText(copperAmount)
 		else
 			tithe = tonumber(tithe)
+			GuildTithe_SavedDB.AmountOfLastDeposit = tithe
 
 			if not GuildTithe_SavedDB.DepositOnBankHide then
 				C_Timer.After(2, function()
 						if IsWarbandBankOpen() then
 							C_Bank.DepositMoney(Enum.BankType.Account, tithe)
+							GuildTithe_SavedDB.TypeOfLastDeposit = "Warband"
 						else
 							--C_Bank.DepositMoney(Enum.BankType.Guild, tithe) --Doesn't seem to work right now for guild bank
-							DepositGuildBankMoney(tithe)
+							DepositGuildBankMoney(tithe) --So we use the old method for now
+							GuildTithe_SavedDB.TypeOfLastDeposit = "Guild"
 						end
 					end)
 			else
@@ -461,10 +570,11 @@ function E:DepositTithe(clicked, isMail)
 				else
 					--C_Bank.DepositMoney(Enum.BankType.Guild, tithe)
 					DepositGuildBankMoney(tithe)
+					GuildTithe_SavedDB.TypeOfLastDeposit = "Guild"
 				end
 			end
 		end
-	end
+	end	
 
 	if GuildTithe_SavedDB.Spammy or E._DebugMode then
 		if tithe ~= GuildTithe_SavedDB.CurrentTithe then
@@ -483,6 +593,8 @@ function E:DepositTithe(clicked, isMail)
 			E.ShowTotalTimer = E:SetTimer(10, function() GuildTithe_SavedDB.LDBDisplayTotal = false; end)
 		end
 	end
+
+	GuildTithe_SavedDB.TimeOfLastDeposit = date() -- local OS clock time as UNIX epoch
 end
 
 local numHelpLines = 15
@@ -530,7 +642,7 @@ function E:OnChatCommand(msg)
 		if not args or args == "tithe" then
 			StaticPopup_Show("GUILDTITHE_RESETTITHE")
 		elseif args == "pos" then
-			self:ResetWindowSettings()
+			--self:ResetWindowSettings()
 		elseif args == "config" then
 			StaticPopup_Show("GUILDTITHE_RESETCONFIG")
 		else
@@ -539,7 +651,7 @@ function E:OnChatCommand(msg)
 
 	-- Show the options frame, we don't save this
 	elseif cmd == "options" or cmd == "config" or cmd == "show" then
-		GT_OptionsFrame:Show()
+		GuildTitheReincarnated.DrawMainUIFrame()
 
 	-- Get the current tithe
 	elseif cmd == "current" or cmd == "tithe" then
@@ -554,38 +666,16 @@ function E:OnChatCommand(msg)
 		else -- No args clause, toggle.
 			GuildTithe_SavedDB.PrettyLDB = not(GuildTithe_SavedDB.PrettyLDB)
 		end
-		E.Info.LDBData.text = GetLDBCoinString()
+		E.Info.LDBData.text = GuildTitheReincarnated.GetLDBCoinString()
+
+	-- Show/hide or toggle the minimap icon.
+	elseif cmd == "icon" then
+		GuildTitheReincarnated.ToggleMinimapIcon()
 
 	-- Show/hide or toggle the mini frame.
 	elseif cmd == "mini" then
-		-- Show or hide the mini frame, this can be forced, or toggled when passed with no args
-		if args == "show" then
-			GT_MiniTitheFrame:Show()
-			GuildTithe_SavedDB.MiniFrameShown = true
-		elseif args == "hide" then
-			GT_MiniTitheFrame:Hide()
-			GuildTithe_SavedDB.MiniFrameShown = false
-		-- Lock the mini-frame
-		elseif args == "lock" then -- This is a toggle
-			if GuildTithe_SavedDB.MiniFrameLocked then
-				self:PrintMessage(L.ChatMiniFrameUnlock)
-				GT_MiniTitheFrame:EnableMouse(true)
-				GuildTithe_SavedDB.MiniFrameLocked = false
-			else
-				self:PrintMessage(L.ChatMiniFrameLock)
-				GT_MiniTitheFrame:EnableMouse(false)
-				GuildTithe_SavedDB.MiniFrameLocked = true
-			end
-		else -- No args clause, toggle.
-			if GuildTithe_SavedDB.MiniFrameShown then
-				GT_MiniTitheFrame:Hide()
-				GuildTithe_SavedDB.MiniFrameShown = false
-			else
-				GT_MiniTitheFrame:Show()
-				GuildTithe_SavedDB.MiniFrameShown = true
-			end
-		end
-
+		print(L["FeatureDeprecated"])
+		
 	-- display tithe running total
 	elseif cmd == "total" then
 		self:PrintMessage(format(L.OptionsTotalTitheText, C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.TotalTithe)))
@@ -665,48 +755,6 @@ function GuildTithe_OnLoad(self)
 	SlashCmdList["GUILDTITHE_MAIN"] = function(msg, editBox)
 		E:OnChatCommand(msg)
 	end
-
-	-- Register dialogs
-	StaticPopupDialogs["GUILDTITHE_RESETTITHE"] = {
-		text = L.DialogResetTitheText,
-		button1 = YES,
-		button2 = NO,
-		OnAccept = function()
-			E:ResetCurrentTithe()
-		end,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-	}
-
-	StaticPopupDialogs["GUILDTITHE_RESETCONFIG"] = {
-		text = E:ParseColorCodedString(L.DialogResetConfigText),
-		button1 = YES,
-		button2 = NO,
-		OnAccept = function()
-			E:ResetConfig()
-		end,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-		showAlert = true,
-		cancels = "GUILDTITHE_RESETTITHE",
-	}
-
-	StaticPopupDialogs["GUILDTITHE_SKINRELOADWARNING"] = {
-		text = L.DialogSkinRequiresReload,
-		button1 = OKAY,
-		button2 = NO,
-		OnAccept = function()
-			ReloadUI()
-		end,
-		OnCancel = function()
-			GT_OptionsFrame_Seperator_ExtraOption4:SetChecked(GuildTithe_SavedDB.SkinElvUI)
-		end,
-		timeout = 0,
-		whileDead = true,
-		hideOnEscape = true,
-	}
 end
 
 function E.EventHandler(self, event, ...)
@@ -716,16 +764,11 @@ function E.EventHandler(self, event, ...)
 		return E:Init()
 
 	elseif event == "PLAYER_ENTERING_WORLD" then
-		-- Hide the options frame
-		GT_OptionsFrame:Hide()
-		-- Skin the frames
-		E:SkinFrames()
 		if not E.Loaded then
 			E:PrintMessage(format(L.Loaded, E:GetVerString()))
 			E:PrintDebug("Loaded in §bDebug Mode§r! This will print a lot of extra, mostly useless information to your chat. You can disable debug mode by unchecking the box marked \"Debug mode\" in the options.")
 			E:SetTimer(2, function()
-					GT_MiniTitheFrame.CurrentTithe:SetText(C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe));
-					E.Info.LDBData.text = GetLDBCoinString();
+					E.Info.LDBData.text = GuildTitheReincarnated.GetLDBCoinString();
 			end, true, "GT_CTUPDATE")
 			E.Loaded = true
 		end
@@ -733,23 +776,23 @@ function E.EventHandler(self, event, ...)
 	-- GUILDBANKFRAME_OPENED: The GB was opened, deposit the outstanding tithe.
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
 		if not GuildTithe_SavedDB.DepositOnBankHide then
-			E:DepositTithe()
+			if GuildTithe_SavedDB.DepositToGuild then E:DepositTithe() end
 		end
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.Banker then
 		if not GuildTithe_SavedDB.DepositOnBankHide then
-			E:DepositTithe()
+			if GuildTithe_SavedDB.DepositToAccount then E:DepositTithe() end
 		end
 		elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.AccountBanker then
 		if not GuildTithe_SavedDB.DepositOnBankHide then
-			E:DepositTithe()
+			if GuildTithe_SavedDB.DepositToAccount then E:DepositTithe() end
 		end
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.GuildBanker then
 		if GuildTithe_SavedDB.DepositOnBankHide then
-			E:DepositTithe()
+			if GuildTithe_SavedDB.DepositToGuild then E:DepositTithe() end
 		end
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_HIDE" and tonumber(arg1) == Enum.PlayerInteractionType.Banker then
 		if GuildTithe_SavedDB.DepositOnBankHide then
-			E:DepositTithe()
+			if GuildTithe_SavedDB.DepositToAccount then E:DepositTithe() end
 		end
 		-- Mail_*: Update outstanding tithe from Mail sources
 	elseif event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" and tonumber(arg1) == Enum.PlayerInteractionType.MailInfo then
@@ -804,7 +847,7 @@ AddonCompartmentFrame:RegisterAddon({
 	icon = "Interface\\ICONS\\inv_misc_coin_17.blp",
 	notCheckable = true,
 	func = function(button, menuInputData, menu)
-		GT_OptionsFrame:Show()
+		GuildTitheReincarnated.DrawMainUIFrame()
 	end,
 	funcOnEnter = function(button)
 		MenuUtil.ShowTooltip(button, function(tooltip)

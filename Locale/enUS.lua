@@ -21,8 +21,8 @@ L["ChatHelpLine6"] = "reset (tithe) -- reset the current tithe."
 L["ChatHelpLine7"] = "reset pos -- Reset the Mini-Frame's position."
 L["ChatHelpLine8"] = "reset config -- Reset this character's config."
 L["ChatHelpLine9"] = "current/tithe -- Show your current outstanding tithe."
-L["ChatHelpLine10"] = "mini -- Toggle the Mini-frame."
-L["ChatHelpLine11"] = "mini lock -- Lock or unlock the Mini-frame."
+L["ChatHelpLine10"] = "mini -- This function is now deprecated in lieu of LDB and minimap button."
+L["ChatHelpLine11"] = "mini lock -- his function is now deprecated in lieu of LDB and minimap button."
 L["ChatHelpLine12"] = "debug (on/true/off/false) -- Toggle debug mode on and off."
 L["ChatHelpLine13"] = "chat (on/true/off/false) -- Toggle chat output on and off."
 L["ChatHelpLine14"] = "prettyldb (on/true/off/false) -- Toggle LDB text vs graphical display."
@@ -70,7 +70,9 @@ L["OptionsTradeText"] = "Trade"
 L["OptionsVersionText"] = "%s"
 L["TooltipLDBDescriptionCurrent"] = "This is your current tithe."
 L["TooltipLDBDescriptionTotal"] = "This is your total tithe."
-
+L["TooltipLDBDescriptionInstructions"] = "Right-click to toggle between total and current tithes."
+L["FeatureDeprecated"] = "This feature is now deprecated. The 'show' command will show the GUI."
+L["MiniMapButtonToggleMsg"] = "Show minimap button:"
 	return L
 end
 
