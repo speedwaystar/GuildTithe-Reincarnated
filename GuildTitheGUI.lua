@@ -247,7 +247,11 @@ function GuildTitheReincarnated.DrawMainUIFrame()
         if GuildTithe_SavedDB.AmountOfLastDeposit == -1 then
             TextToShow = "This tracking will begin with the next deposit."
         else
-            TextToShow = GetMoneyString(GuildTithe_SavedDB.AmountOfLastDeposit)
+            if GuildTithe_SavedDB.PrettyLDB then
+                TextToShow = GetMoneyString(GuildTithe_SavedDB.AmountOfLastDeposit)
+            else
+                TextToShow = C_CurrencyInfo.GetCoinText(GuildTithe_SavedDB.AmountOfLastDeposit)
+            end
             TextToShow = TextToShow .. " (deposited to " .. GuildTithe_SavedDB.TypeOfLastDeposit .. ")"
         end
         LastTitheAmountDisplay:SetText(TextToShow)
@@ -280,6 +284,19 @@ function GuildTitheReincarnated.DrawMainUIFrame()
                 end
             )
         GuildTitheReincarnated.GTSettingsFrame:AddChild(MinimapButtonToggle)
+
+        -- Pretty currency display control (To enable in next version)
+        local PrettyLDBModeToggle = AceGUI:Create("CheckBox")
+        PrettyLDBModeToggle:SetValue(GuildTithe_SavedDB.PrettyLDB) -- "yes" hides
+        PrettyLDBModeToggle:SetType("checkbox")
+        PrettyLDBModeToggle:SetTriState(false)
+        PrettyLDBModeToggle:SetLabel("Graphical Coin Strings")
+        PrettyLDBModeToggle:SetCallback("OnValueChanged",
+                function(widget,callbackName,value)
+                    GuildTitheReincarnated.TogglePrettyLDB()
+                end
+            )
+        --GuildTitheReincarnated.GTSettingsFrame:AddChild(PrettyLDBModeToggle)
 
         --About section
         local ProjectInfo = AceGUI:Create("Heading")

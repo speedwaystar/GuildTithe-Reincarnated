@@ -80,6 +80,11 @@ function GuildTitheReincarnated.ToggleMinimapIcon()
 	end
 end
 
+function GuildTitheReincarnated.TogglePrettyLDB()
+	GuildTithe_SavedDB.PrettyLDB = not GuildTithe_SavedDB.PrettyLDB
+	GuildTitheReincarnated.GTSettingsFrame:DoLayout()
+end
+
 function DrawTooltip(tooltip)
 	if tooltip and tooltip.AddLine then tooltip:SetText("GuildTithe") end
 	if GuildTithe_SavedDB.LDBDisplayTotal then
@@ -197,8 +202,15 @@ function GuildTitheReincarnated.GetLDBCoinString()
 		end
 	end
 
-	GuildTitheReincarnated.CurrentTithe = GetMoneyString(ct,true)
-	GuildTitheReincarnated.TotalTithe = GetMoneyString(tt,true)
+	-- format currency strings everywhere according to text/graphical preference
+	-- In the 'guildtithereincarnated' namespace, this is just for display
+	if GuildTithe_SavedDB.PrettyLDB then
+		GuildTitheReincarnated.CurrentTithe = GetMoneyString(ct,true)
+		GuildTitheReincarnated.TotalTithe = GetMoneyString(tt,true)
+	else
+		GuildTitheReincarnated.CurrentTithe = C_CurrencyInfo.GetCoinText(ct)
+		GuildTitheReincarnated.TotalTithe = C_CurrencyInfo.GetCoinText(tt)
+	end
 
 	if GuildTithe_SavedDB.PrettyLDB then
 		if GuildTithe_SavedDB.LDBDisplayTotal then
@@ -748,6 +760,12 @@ function E.EventHandler(self, event, ...)
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		if not E.Loaded then
 			E:PrintMessage(format(L.Loaded, E:GetVerString()))
+			-- Execute minimap icon display check so user choice persists across UI loads.
+			if GuildTithe_SavedDB.HideMinimapIcon then
+				LDBIcon:Hide("GuildTitheMinimapButton")
+			else
+				LDBIcon:Show("GuildTitheMinimapButton")
+			end
 			E:PrintDebug("Loaded in §bDebug Mode§r! This will print a lot of extra, mostly useless information to your chat. You can disable debug mode by unchecking the box marked \"Debug mode\" in the options.")
 			E:SetTimer(2, function()
 					E.Info.LDBData.text = GuildTitheReincarnated.GetLDBCoinString();
