@@ -1,7 +1,7 @@
 --[[
 ------------------------------------------------------------------------
 	Project: GuildTithe Reincarnated
-	File: Core rev. 147
+	File: Core rev. 148
 	Date: 2024-01-10T02:30Z
 	Purpose: Core Addon Code
 	Credits: Code written by Vandesdelca32, updated for Dragonflight by Miragosa
@@ -30,9 +30,11 @@ local E, L = unpack(select(2, ...))
 local GOLD_CAP = (9999999 * COPPER_PER_GOLD) + (99 * COPPER_PER_SILVER) + 99
 local WARBAND_GOLD_CAP = GOLD_CAP * 10 -- in enUS, anyway
 
--- Global variables to communicate with GUI
+-- Within-addon variable namespace to communicate with GUI
 GuildTitheReincarnated = {}
---E.Info = {} --database
+
+-- This is now how we handle currency display.
+Currency = LibStub("Krowi_Currency-1.0")
 
 -- If a restriction is active, return type.
 -- If none are active, return -1.
@@ -56,6 +58,26 @@ end
 function GuildTitheReincarnated.round(num, numDecimalPlaces)
   local mult = 10^(numDecimalPlaces or 0)
   return math.floor(num * mult + 0.5) / mult
+end
+
+-- Pretty-print for GUI use (useicons is a boolean. Usually want to pass along PrettyLDB here)
+function GuildTitheReincarnated.PrettyPrint(amount, useicons)
+	if useicons then
+		amount = Currency:FormatMoney(amount, {
+			MoneyLabel = "Icon",
+			ThousandsSeparator = "Comma",
+			MoneyColored = true,
+			TextureSize = 10,
+		})
+	else
+		amount = Currency:FormatMoney(amount, {
+			MoneyLabel = "Text",
+			ThousandsSeparator = "Comma",
+			MoneyColored = true,
+		})
+	end
+
+	return amount
 end
 
 function IsWarbandBankOpen()
@@ -82,7 +104,6 @@ end
 
 function GuildTitheReincarnated.TogglePrettyLDB()
 	GuildTithe_SavedDB.PrettyLDB = not GuildTithe_SavedDB.PrettyLDB
-	GuildTitheReincarnated.GTSettingsFrame:DoLayout()
 end
 
 function DrawTooltip(tooltip)
@@ -113,7 +134,7 @@ end
 
 -- Get a string for the current version of the addon.
 function E:GetVerString()
-	CURRENT_REVISION = 147
+	CURRENT_REVISION = 148
 	local v, rev = (C_AddOns.GetAddOnMetadata(addonName, "VERSION") or "???"), CURRENT_REVISION
 	
 	if short then
@@ -159,7 +180,7 @@ local SettingsDefaults = {
 	GUIIsShown = false,
 	--SkinElvUI = true,
 	LDBDisplayTotal = false,
-	PrettyLDB = false,
+	PrettyLDB = true,
 	DepositOnBankHide = false,
 	DepositToGuild = true,
 	DepositToAccount = false,
@@ -174,53 +195,19 @@ GuildTitheReincarnated.CurrentTithe, GuildTitheReincarnated.TotalTithe = 0
 
 -- Get the coin string for the databroker icon, because it needs to be shorter.
 function GuildTitheReincarnated.GetLDBCoinString()
-	local text = ""
-	local ct = GuildTithe_SavedDB.CurrentTithe
-	local tt = GuildTithe_SavedDB.TotalTithe
+	if GuildTithe_SavedDB.PrettyLDB then
+		GuildTitheReincarnated.CurrentTithe = GuildTitheReincarnated.PrettyPrint(GuildTithe_SavedDB.CurrentTithe, true)
+		GuildTitheReincarnated.TotalTithe = GuildTitheReincarnated.PrettyPrint(GuildTithe_SavedDB.TotalTithe, true)
+	else
+		GuildTitheReincarnated.CurrentTithe = GuildTitheReincarnated.PrettyPrint(GuildTithe_SavedDB.CurrentTithe, false)
+		GuildTitheReincarnated.TotalTithe = GuildTitheReincarnated.PrettyPrint(GuildTithe_SavedDB.TotalTithe, false)
+	end
 
 	if GuildTithe_SavedDB.LDBDisplayTotal then
-		local gold = floor(tt / COPPER_PER_GOLD)
-		local silver = floor(tt / SILVER_PER_GOLD) % COPPER_PER_SILVER
-		local copper = floor(tt % COPPER_PER_SILVER)
-		if gold ~= 0 then
-			text = format("%s|cffffd700g|r %s|cffc7c7cfs|r %s|cffeda55fc|r", gold, silver, copper)
-		elseif silver ~= 0 then
-			text = format("%s|cffc7c7cfs|r %s|cffeda55fc|r", silver, copper)
-		else
-			text = format("%s|cffeda55fc|r", copper)
-		end
+		return "Total: " .. GuildTitheReincarnated.TotalTithe
 	else
-		local gold = floor(ct / COPPER_PER_GOLD)
-		local silver = floor(ct / SILVER_PER_GOLD) % COPPER_PER_SILVER
-		local copper = floor(ct % COPPER_PER_SILVER)
-		if gold ~= 0 then
-			text = format("%s|cffffd700g|r %s|cffc7c7cfs|r %s|cffeda55fc|r", gold, silver, copper)
-		elseif silver ~= 0 then
-			text = format("%s|cffc7c7cfs|r %s|cffeda55fc|r", silver, copper)
-		else
-			text = format("%s|cffeda55fc|r", copper)
-		end
+		return "Tithe: " .. GuildTitheReincarnated.CurrentTithe
 	end
-
-	-- format currency strings everywhere according to text/graphical preference
-	-- In the 'guildtithereincarnated' namespace, this is just for display
-	if GuildTithe_SavedDB.PrettyLDB then
-		GuildTitheReincarnated.CurrentTithe = GetMoneyString(ct,true)
-		GuildTitheReincarnated.TotalTithe = GetMoneyString(tt,true)
-	else
-		GuildTitheReincarnated.CurrentTithe = C_CurrencyInfo.GetCoinText(ct)
-		GuildTitheReincarnated.TotalTithe = C_CurrencyInfo.GetCoinText(tt)
-	end
-
-	if GuildTithe_SavedDB.PrettyLDB then
-		if GuildTithe_SavedDB.LDBDisplayTotal then
-			return "Total: " .. GetMoneyString(tt,true)
-		else
-			return "Tithe: " .. GetMoneyString(ct, true)
-		end
-	else
-		return text
-	end	
 end
 
 function E:Init()
@@ -273,9 +260,9 @@ function E:Init()
 	-- Initialise GUI display track for new GUI
 	if GuildTithe_SavedDB.GUIIsShown == nil then GuildTithe_SavedDB.GUIIsShown = false end
 
-	-- existing users won't have a setting for PrettyLDB/when to deposit. Fix that. (Defaults to off to preserve existing behavior)
+	-- existing users won't have a setting for PrettyLDB/when to deposit. Fix that. (Now defaulting to on)
 	if (GuildTithe_SavedDB.PrettyLDB == nil or GuildTithe_SavedDB.PrettyLDB == '') then
-		GuildTithe_SavedDB.PrettyLDB = false
+		GuildTithe_SavedDB.PrettyLDB = true
 	end
 
 	if GuildTithe_SavedDB.DepositOnBankHide == nil then
@@ -546,6 +533,10 @@ function E:DepositTithe(clicked, isMail)
 		else
 			tithe = tonumber(tithe)
 			GuildTithe_SavedDB.AmountOfLastDeposit = tithe
+			
+			-- format this for GUI
+			GuildTitheReincarnated.AmountOfLastDeposit = GuildTitheReincarnated.PrettyPrint(GuildTithe_SavedDB.AmountOfLastDeposit,
+				GuildTithe_SavedDB.PrettyLDB)
 
 			if not GuildTithe_SavedDB.DepositOnBankHide then
 				C_Timer.After(2, function()

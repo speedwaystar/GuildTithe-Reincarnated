@@ -1,0 +1,27 @@
+#
+#    Copyright (c) 2026 Krowi
+#
+#    All Rights Reserved unless otherwise explicitly stated.
+#
+#    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#    SOFTWARE.
+#
+
+## Interface: 110207, 50503, 11508
+## Title: Krowi's |cFF1D92C2Currency|r
+## Version: 1.0.3
+## Author: Krowi
+## Notes: A comprehensive currency formatting library providing flexible formatting for in-game currency and other currency values
+## X-Discord-Invite-Link: https://discord.gg/mdBFQJYeQZ
+## X-Discord-Server-Name: Krowi's Addons
+## X-CurseForge: https://www.curseforge.com/wow/addons/krowi-currency
+## X-Curse-Project-ID: 1418733
+## X-Wago: https://addons.wago.io/addons/krowi-currency
+## X-Wago-ID: qGZRroGd
+
+Krowi_Currency-1.0.xml

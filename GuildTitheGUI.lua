@@ -10,6 +10,7 @@ function GuildTitheReincarnated.DrawMainUIFrame()
                 GuildTithe_SavedDB.GUIIsShown = false
                 AceGUI:Release(widget)
             end)
+        GuildTitheReincarnated.GTSettingsFrame:SetPoint("CENTER", UIParent)
         GuildTitheReincarnated.GTSettingsFrame:SetTitle("GuildTithe Options")
         GuildTitheReincarnated.GTSettingsFrame:SetWidth(650)
         if IsInGuild() then
@@ -222,6 +223,31 @@ function GuildTitheReincarnated.DrawMainUIFrame()
             )
         DepositSettingsGroup:AddChild(AccountDepositToggle)
 
+        local CurrentTitheDisplay = AceGUI:Create("SFX-Info")
+        local TotalTitheDisplay = AceGUI:Create("SFX-Info")
+        local LastTitheAmountDisplay = AceGUI:Create("SFX-Info")
+
+        local LastTitheDisplayString, CurrentTitheDisplayString, TotalTitheDisplayString = ""
+        local function UpdateTitheDisplays()
+            -- Tithes
+            CurrentTitheDisplayString = GuildTitheReincarnated.PrettyPrint(GuildTithe_SavedDB.CurrentTithe, GuildTithe_SavedDB.PrettyLDB)
+            TotalTitheDisplayString = GuildTitheReincarnated.PrettyPrint(GuildTithe_SavedDB.TotalTithe, GuildTithe_SavedDB.PrettyLDB)
+            LastTitheDisplayString = GuildTitheReincarnated.PrettyPrint(GuildTithe_SavedDB.AmountOfLastDeposit, GuildTithe_SavedDB.PrettyLDB)
+
+            -- Last tithe deposited
+            if GuildTithe_SavedDB.AmountOfLastDeposit == -1 then
+                LastTitheDisplayString = "This tracking will begin with the next deposit."
+            else
+                LastTitheDisplayString = LastTitheDisplayString .. " (deposited to " .. GuildTithe_SavedDB.TypeOfLastDeposit .. ")"
+            end
+
+            CurrentTitheDisplay:SetText(CurrentTitheDisplayString)
+            TotalTitheDisplay:SetText(TotalTitheDisplayString)
+            LastTitheAmountDisplay:SetText(LastTitheDisplayString)
+
+            GuildTitheReincarnated.GTSettingsFrame:DoLayout()
+        end
+
         local StatusDisplayHeader = AceGUI:Create("Heading")
         StatusDisplayHeader:SetText("Tithes")
         StatusDisplayHeader:SetRelativeWidth(1.0)
@@ -231,31 +257,20 @@ function GuildTitheReincarnated.DrawMainUIFrame()
         local StatusDisplay = AceGUI:Create("SimpleGroup")
         GuildTitheReincarnated.GTSettingsFrame:AddChild(StatusDisplay)
 
-        local CurrentTitheDisplay = AceGUI:Create("SFX-Info")
+        UpdateTitheDisplays()
+
         CurrentTitheDisplay:SetLabel("Current")
-        CurrentTitheDisplay:SetText(GuildTitheReincarnated.CurrentTithe)
+        CurrentTitheDisplay:SetText(CurrentTitheDisplayString)
         StatusDisplay:AddChild(CurrentTitheDisplay)
 
-        local TotalTitheDisplay = AceGUI:Create("SFX-Info")
         TotalTitheDisplay:SetLabel("Total")
-        TotalTitheDisplay:SetText(GuildTitheReincarnated.TotalTithe)
+        TotalTitheDisplay:SetText(TotalTitheDisplayString)
         StatusDisplay:AddChild(TotalTitheDisplay)
 
-        local LastTitheAmountDisplay = AceGUI:Create("SFX-Info")
         LastTitheAmountDisplay:SetLabel("Last Tithe")
-        local TextToShow = ""
-        if GuildTithe_SavedDB.AmountOfLastDeposit == -1 then
-            TextToShow = "This tracking will begin with the next deposit."
-        else
-            if GuildTithe_SavedDB.PrettyLDB then
-                TextToShow = GetMoneyString(GuildTithe_SavedDB.AmountOfLastDeposit)
-            else
-                TextToShow = C_CurrencyInfo.GetCoinText(GuildTithe_SavedDB.AmountOfLastDeposit)
-            end
-            TextToShow = TextToShow .. " (deposited to " .. GuildTithe_SavedDB.TypeOfLastDeposit .. ")"
-        end
-        LastTitheAmountDisplay:SetText(TextToShow)
+        LastTitheAmountDisplay:SetText(LastTitheDisplayString)
         GuildTitheReincarnated.GTSettingsFrame:AddChild(LastTitheAmountDisplay)
+        
 
         local LastTitheDateDisplay = AceGUI:Create("SFX-Info")
         LastTitheDateDisplay:SetLabel("Deposited")
@@ -285,7 +300,7 @@ function GuildTitheReincarnated.DrawMainUIFrame()
             )
         GuildTitheReincarnated.GTSettingsFrame:AddChild(MinimapButtonToggle)
 
-        -- Pretty currency display control (To enable in next version)
+        -- Pretty currency display control
         local PrettyLDBModeToggle = AceGUI:Create("CheckBox")
         PrettyLDBModeToggle:SetValue(GuildTithe_SavedDB.PrettyLDB) -- "yes" hides
         PrettyLDBModeToggle:SetType("checkbox")
@@ -294,9 +309,10 @@ function GuildTitheReincarnated.DrawMainUIFrame()
         PrettyLDBModeToggle:SetCallback("OnValueChanged",
                 function(widget,callbackName,value)
                     GuildTitheReincarnated.TogglePrettyLDB()
+                    UpdateTitheDisplays()
                 end
             )
-        --GuildTitheReincarnated.GTSettingsFrame:AddChild(PrettyLDBModeToggle)
+        GuildTitheReincarnated.GTSettingsFrame:AddChild(PrettyLDBModeToggle)
 
         --About section
         local ProjectInfo = AceGUI:Create("Heading")
