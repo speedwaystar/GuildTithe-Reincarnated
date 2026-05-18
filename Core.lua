@@ -544,7 +544,7 @@ function E:DepositTithe(clicked, isMail)
 							C_Bank.DepositMoney(Enum.BankType.Account, tithe)
 							GuildTithe_SavedDB.TypeOfLastDeposit = "Warband"
 						else
-							--C_Bank.DepositMoney(Enum.BankType.Guild, tithe) --Doesn't seem to work right now for guild bank
+							--C_Bank.DepositMoney(Enum.BankType.Guild, tithe) --This didn't work for me, but should have. Weird.
 							DepositGuildBankMoney(tithe) --So we use the old method for now
 							GuildTithe_SavedDB.TypeOfLastDeposit = "Guild"
 						end
@@ -552,6 +552,7 @@ function E:DepositTithe(clicked, isMail)
 			else
 				if IsWarbandBankOpen() then
 					C_Bank.DepositMoney(Enum.BankType.Account, tithe)
+					GuildTithe_SavedDB.TypeOfLastDeposit = "Warband"
 				else
 					--C_Bank.DepositMoney(Enum.BankType.Guild, tithe)
 					DepositGuildBankMoney(tithe)
@@ -563,9 +564,16 @@ function E:DepositTithe(clicked, isMail)
 
 	if GuildTithe_SavedDB.Spammy or E._DebugMode then
 		if tithe ~= GuildTithe_SavedDB.CurrentTithe then
-			self:PrintMessage(format(L.ChatDepositToGoldCap, C_CurrencyInfo.GetCoinTextureString(tithe), C_CurrencyInfo.GetCoinTextureString(GuildTithe_SavedDB.CurrentTithe)), false, E._DebugMode)
+			self:PrintMessage(format(L.ChatDepositToGoldCap,
+				GuildTitheReincarnated.PrettyPrint(tithe,GuildTithe_SavedDB.PrettyLDB),
+				GuildTitheReincarnated.PrettyPrint(GuildTithe_SavedDB.CurrentTithe,GuildTithe_SavedDB.PrettyLDB)),
+				false, E._DebugMode
+			)
 		else
-			self:PrintMessage(format(L.ChatDepositTitheAmount, C_CurrencyInfo.GetCoinTextureString(tithe), false, E._DebugMode))
+			self:PrintMessage(format(L.ChatDepositTitheAmount,
+				GuildTitheReincarnated.PrettyPrint(tithe,GuildTithe_SavedDB.PrettyLDB),
+				false, E._DebugMode)
+			)
 		end
 	end
 
